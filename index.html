@@ -2997,26 +2997,105 @@ function renderInventario(onlyMinimo) {
          cobertura = '+30 d'; 
       }
       
-      let loteRows = Object.keys(v.lotes).filter(lk => v.lotes[lk].stock > 0 || lk === 'sinlote').map(lk => {
-        const l = v.lotes[lk];
-        if (l.stock === 0 && lk !== 'sinlote') return '';
-        // Usar el string original del lote (no la clave normalizada)
-        const displayLote = l.loteOriginal || lk;
-        const badges = formatLoteBadge(displayLote);
-        
-        return `<tr class="sub-lote lote-de-${v.codigo}" style="display:none; background: rgba(0,0,0,0.2);">
-          <td style="border-left: 2px solid var(--cyan);"></td>
-          <td colspan="3" style="padding-left: 10px;">
-            <div style="display:flex; align-items:center;">
-              <span style="color:var(--muted); font-size:11px; margin-right:8px;">↳ Sublote:</span>
-              <span class="lote-cell">${badges}</span>
-            </div>
-          </td>
-          <td class="num-cell" style="font-size:12px; color:var(--green); text-align:right; opacity:0.8;">+${l.entradas}</td>
-          <td class="num-cell" style="font-size:12px; color:var(--red); text-align:right; opacity:0.8;">-${l.salidas}</td>
-          <td class="num-cell" style="font-size:13px; font-weight:bold; color:#fff; text-align:right;">${l.stock}</td>
-          <td colspan="3"></td>
-        </tr>`;
+      let lotesArray = Object.keys(v.lotes).map(lk => {
+          return { key: lk, ...v.lotes[lk] };
+      });
+      
+      lotesArray.forEach(l => {
+          l.expDate = Infinity;
+          if (l.loteOriginal && l.loteOriginal.includes('Vence:')) {
+              const pVence = l.loteOriginal.split('|').find(px => px.includes('Vence:'));
+              if (pVence) {
+                  const dArr = pVence.replace('Vence:', '').trim().split('/');
+                  if (dArr.length === 3) {
+                      const yy = dArr[2].length === 2 ? '20' + dArr[2] : dArr[2];
+                      l.expDate = new Date(parseInt(yy), parseInt(dArr[1]) - 1, parseInt(dArr[0])).getTime();
+                  }
+              }
+          }
+      });
+      
+      lotesArray.sort((a, b) => a.expDate - b.expDate);
+      
+      let priorityCounter = 1;
+      let loteRows = lotesArray.map(l => {
+          let rawLote = l.loteOriginal || l.key;
+          let isSinLote = l.key === 'sinlote' || (rawLote.toLowerCase().replace(/[^a-z]/g, '').includes('sinlote'));
+          
+          if (l.stock === 0 && isSinLote) return '';
+          
+          // Extract Vence to style it separately
+          let venceDateStr = '';
+          let pVence = rawLote.split('|').find(px => px.includes('Vence:'));
+          if (pVence) {
+             venceDateStr = pVence.replace('Vence:', '').trim();
+             // Remove it from the main string so we can render it beautifully
+             rawLote = rawLote.replace(pVence, '').replace(/\|\s*\|/g, '|').replace(/\|\s*$/, '').trim();
+          }
+          
+          const badges = formatLoteBadge(rawLote);
+          
+          let rowStyle = "background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.02);";
+          let stockText = `${l.stock}`;
+          let stockColor = "#fff";
+          let priorityText = "";
+          let extraClasses = "";
+          let opacity = "1";
+          let firstTdStyle = "border-left: 2px solid var(--cyan);";
+          let venceBadge = "";
+          let estadoBadge = "";
+          
+          if (l.stock <= 0) {
+              rowStyle = "background: rgba(0,0,0,0.4);";
+              opacity = "0.5";
+              stockColor = "var(--muted)";
+              stockText = `<del>${l.stock}</del>`;
+              priorityText = `<span style="color:var(--green); font-weight:bold;">✓ DESPACHADO</span>`;
+              extraClasses = "text-decoration: line-through; filter: grayscale(1);";
+              estadoBadge = `<span style="background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); color:#fca5a5; padding:4px 8px; border-radius:6px; font-weight:bold; font-size:11px;">AGOTADO</span>`;
+              if (venceDateStr) venceBadge = `<span style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:var(--muted); padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold;">${venceDateStr}</span>`;
+          } else {
+              if (priorityCounter === 1) {
+                  rowStyle = "background: rgba(239,68,68,0.08); border-bottom: 1px solid rgba(239,68,68,0.1);";
+                  firstTdStyle = "border-left: 4px solid #ef4444;";
+                  stockColor = "#facc15"; 
+                  priorityText = `<span style="color:#ef4444; font-weight:900; letter-spacing:0.5px;">1° DESPACHAR YA (NUEVA PRIORIDAD)</span>`;
+                  estadoBadge = `<span style="background:#ef4444; color:#fff; padding:4px 10px; border-radius:6px; font-weight:900; font-size:11px; box-shadow:0 0 10px rgba(239,68,68,0.4);">URGENTE</span>`;
+                  if (venceDateStr) venceBadge = `<span style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:#ef4444; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:bold;">⚠️ ${venceDateStr}</span>`;
+                  priorityCounter++;
+              } else if (priorityCounter === 2) {
+                  stockColor = "#facc15"; 
+                  priorityText = `<span style="color:#facc15; font-weight:900; letter-spacing:0.5px;">2° DESPUÉS DEL ANTERIOR</span>`;
+                  estadoBadge = `<span style="border:1px solid #facc15; color:#facc15; padding:4px 10px; border-radius:6px; font-weight:900; font-size:11px;">PRONTO</span>`;
+                  if (venceDateStr) venceBadge = `<span style="border:1px solid rgba(245,158,11,0.5); color:#f59e0b; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:bold;">⏳ ${venceDateStr}</span>`;
+                  priorityCounter++;
+              } else {
+                  stockColor = "#10b981"; 
+                  priorityText = `<span style="color:var(--muted); font-weight:bold;">Stock Normal</span>`;
+                  estadoBadge = `<span style="border:1px solid rgba(16,185,129,0.5); color:#10b981; padding:4px 10px; border-radius:6px; font-weight:900; font-size:11px;">SEGURO</span>`;
+                  if (venceDateStr) venceBadge = `<span style="border:1px solid rgba(16,185,129,0.5); color:#10b981; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:bold;">✓ ${venceDateStr}</span>`;
+                  priorityCounter++;
+              }
+          }
+          
+          return `<tr class="sub-lote lote-de-${v.codigo}" style="display:none; ${rowStyle} opacity:${opacity};">
+            <td style="${firstTdStyle}"></td>
+            <td colspan="3" style="padding-left: 10px; ${extraClasses}">
+              <div style="display:flex; align-items:center; gap: 15px;">
+                <span class="lote-cell" style="min-width: 70px;">${badges}</span>
+                ${venceBadge}
+              </div>
+            </td>
+            <td class="num-cell" style="font-size:12px; color:var(--green); text-align:right; opacity:0.8; ${extraClasses}">+${l.entradas}</td>
+            <td class="num-cell" style="font-size:12px; color:var(--red); text-align:right; opacity:0.8; ${extraClasses}">-${l.salidas}</td>
+            <td class="num-cell" style="font-size:16px; font-weight:900; color:${stockColor}; text-align:right; text-shadow:0 0 5px rgba(0,0,0,0.5);">${stockText}</td>
+            <td colspan="3" style="font-size:12px; padding-left:15px; vertical-align:middle;">
+                <div style="display:flex; align-items:center; gap: 15px;">
+                    ${estadoBadge}
+                    ${priorityText}
+                </div>
+            </td>
+          </tr>`;
       }).join('');
       
       const hasLotes = loteRows.trim().length > 0;
@@ -5385,9 +5464,36 @@ function pageFlipTransition(callback) {
 // KPIs y Alertas
 function updateKPIs() {
   try {
-    const entradas = KARDEX_DATA.reduce((acc, row) => acc + (Number(row.entrada) || 0), 0);
-    const salidas = KARDEX_DATA.reduce((acc, row) => acc + (Number(row.salida) || 0), 0);
-    const stock = entradas - salidas;
+    const filterTipoVal = document.getElementById('filter-tipo') ? document.getElementById('filter-tipo').value : 'ALL';
+    
+    let entradas = 0;
+    let salidas = 0;
+    let stock = 0;
+    
+    // Considerar también los filtros actuales si se desea, pero usaremos KARDEX_DATA 
+    // y filtraremos el tipo para los KPIs globales.
+    entradas = FILTERED_DATA.reduce((acc, row) => acc + (Number(row.entrada) || 0), 0);
+    salidas = FILTERED_DATA.reduce((acc, row) => acc + (Number(row.salida) || 0), 0);
+    
+    const kpiStockLabel = document.querySelector('.kcard.kc-green .klabel');
+    const kpiStockSub = document.querySelector('.kcard.kc-green .ksub');
+    
+    if (filterTipoVal === 'Entrada') {
+        stock = entradas;
+        if(kpiStockLabel) kpiStockLabel.textContent = "📥 Entradas Totales";
+        if(kpiStockSub) kpiStockSub.textContent = "Ingresos en este filtro";
+    } else if (filterTipoVal === 'Salida') {
+        stock = salidas;
+        if(kpiStockLabel) kpiStockLabel.textContent = "📤 Salidas Totales";
+        if(kpiStockSub) kpiStockSub.textContent = "Despachos en este filtro";
+    } else {
+        // Para Resumen Total o Todo
+        const totIn = KARDEX_DATA.reduce((acc, row) => acc + (Number(row.entrada) || 0), 0);
+        const totOut = KARDEX_DATA.reduce((acc, row) => acc + (Number(row.salida) || 0), 0);
+        stock = totIn - totOut;
+        if(kpiStockLabel) kpiStockLabel.textContent = "📦 Stock Físico Total";
+        if(kpiStockSub) kpiStockSub.textContent = "Volumen físico resguardado";
+    }
     
     const elStock = document.getElementById('kpi-stock');
     if(elStock) countUp(elStock, stock);
