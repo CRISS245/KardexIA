@@ -349,7 +349,7 @@ body::before{
 .kcard.kc-yellow::after{background:linear-gradient(90deg,var(--yellow),#fbbf24)}
 .klabel{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.9px;color:var(--muted);margin-bottom:7px}
 .kval{font-size:1.85rem;font-weight:800;letter-spacing:-1px;line-height:1;transition:color .3s; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-.kval.green{color:var(--green)}.kval.red{color:var(--red)}.kval.blue{color:var(--blue)}.kval.purple{color:var(--purple)}.kval.yellow{color:var(--yellow)}
+.kval.green{color:var(--green);text-shadow:0 0 16px rgba(16,185,129,0.4)}.kval.red{color:var(--red);text-shadow:0 0 16px rgba(239,68,68,0.4)}.kval.blue{color:var(--blue);text-shadow:0 0 16px rgba(59,130,246,0.4)}.kval.purple{color:var(--purple);text-shadow:0 0 16px rgba(139,92,246,0.4)}.kval.yellow{color:var(--yellow);text-shadow:0 0 16px rgba(245,158,11,0.4)}
 .ksub{font-size:.7rem;color:var(--muted);margin-top:5px;display:flex;align-items:center;gap:4px;}
 .ksub.positive{color:var(--green);}
 .ksub.warn{color:var(--yellow);}
@@ -1108,7 +1108,7 @@ select.form-control option{
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <div class="klabel">❌ Material Agotado</div>
         </div>
-        <div class="kval" style="color:var(--red);text-shadow:0 0 16px rgba(239,68,68,0.4);" id="kpi-agotado">0</div>
+        <div class="kval red" id="kpi-agotado">0</div>
         <div class="ksub warn">Productos con stock cero</div>
       </div>
       <div class="kcard kc-yellow kcard-shine">
@@ -1580,44 +1580,44 @@ select.form-control option{
     </div>
 
     <div id="view-config-gateway" class="view-section">
-      <div style="padding: 20px;">
-        <h2 style="color: #fff; font-size: 1.4rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+      <div style="padding: 20px; display: flex; flex-direction: column; align-items: center;">
+        <h2 style="color: #fff; font-size: 1.4rem; margin-bottom: 30px; display: flex; align-items: center; gap: 10px; width: 100%; justify-content: flex-start;">
           <span style="color:var(--blue)">⚙️</span> Configuraciones de Sistema
         </h2>
 
-        <!-- Contenedor Horizontal para las Listas/Configuraciones -->
-        <div style="display: flex; gap: 20px; overflow-x: auto; padding-bottom: 20px; align-items: flex-start; min-height: 600px;">
-          
-          <!-- Columna 1: Personalización de Marca -->
-          <div class="panel-card" style="min-width: 380px; max-width: 380px; padding: 30px; text-align:center; background:linear-gradient(180deg, #0f172a 0%, #020617 100%); border:1px solid #1e293b; box-shadow:0 15px 40px rgba(0,0,0,0.6); border-radius: 12px;">
-            <div style="display:inline-block; margin-bottom:35px;">
-              <img id="logo-digitalice" src="https://i.postimg.cc/BLstbwmb/image.png" alt="Digitalice Prime" style="height:180px; object-fit:contain; filter: drop-shadow(0 0 10px rgba(59,130,246,0.3));">
-            </div>
-            
-            <div style="background:rgba(239,68,68,0.05); border-left:5px solid var(--red); padding:20px; text-align:left; border-radius: 4px;">
-              <h3 style="color:var(--red); font-size:1.15rem; margin-bottom:10px; font-weight:800; letter-spacing:0.5px;">⚠️ AVISO LEGAL DE PROPIEDAD</h3>
-              <p style="color:rgba(255,255,255,0.85); font-size:0.95rem; line-height:1.6; margin:0;">
-                El software <strong style="color:#fff;">KardexIA</strong> es propiedad exclusiva de <strong style="color:var(--blue); font-size:1rem;">Digitalice Prime</strong>.<br><br>Su diseño, arquitectura y código fuente han sido desarrollados íntegramente por el <strong style="color:#fff; font-size:1rem;">Ing. Christian Gabriel Ramos Rojas</strong>.<br><br>
-                <span style="color:var(--red); font-size:0.85rem;">Queda estrictamente prohibida su copia, distribución o comercialización sin autorización expresa.</span>
-              </p>
-            </div>
+        <!-- Aviso Legal (Centrado Superior) -->
+        <div class="panel-card" style="width: 100%; max-width: 500px; padding: 30px; text-align:center; background:linear-gradient(180deg, #0f172a 0%, #020617 100%); border:1px solid #1e293b; box-shadow:0 15px 40px rgba(0,0,0,0.6); border-radius: 12px; margin-bottom: 40px;">
+          <div style="display:inline-block; margin-bottom:35px;">
+            <img id="logo-digitalice" src="https://i.postimg.cc/BLstbwmb/image.png" alt="Digitalice Prime" style="height:180px; object-fit:contain; filter: drop-shadow(0 0 10px rgba(59,130,246,0.3));">
           </div>
+          
+          <div style="background:rgba(239,68,68,0.05); border-left:5px solid var(--red); padding:20px; text-align:left; border-radius: 4px;">
+            <h3 style="color:var(--red); font-size:1.15rem; margin-bottom:10px; font-weight:800; letter-spacing:0.5px;">⚠️ AVISO LEGAL DE PROPIEDAD</h3>
+            <p style="color:rgba(255,255,255,0.85); font-size:0.95rem; line-height:1.6; margin:0;">
+              El software <strong style="color:#fff;">KardexIA</strong> es propiedad exclusiva de <strong style="color:var(--blue); font-size:1rem;">Digitalice Prime</strong>.<br><br>Su diseño, arquitectura y código fuente han sido desarrollados íntegramente por el <strong style="color:#fff; font-size:1rem;">Ing. Christian Gabriel Ramos Rojas</strong>.<br><br>
+              <span style="color:var(--red); font-size:0.85rem;">Queda estrictamente prohibida su copia, distribución o comercialización sin autorización expresa.</span>
+            </p>
+          </div>
+        </div>
 
-          <!-- Columna 2: Inteligencia Artificial -->
-          <div class="panel-card" style="min-width: 320px; max-width: 320px; padding: 25px; background:#0f172a; border:1px solid #1e293b; border-radius: 12px;">
+        <!-- Contenedor para el resto de las configuraciones abajo -->
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; width: 100%; padding-bottom: 20px;">
+          
+          <!-- Inteligencia Artificial -->
+          <div class="panel-card" style="flex: 1; min-width: 320px; max-width: 400px; padding: 25px; background:#0f172a; border:1px solid #1e293b; border-radius: 12px;">
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
               <video autoplay loop muted playsinline style="width:35px; height:35px; border-radius:50%; mix-blend-mode:screen; background:#000; object-fit:cover;"><source src="https://i.imgur.com/mv790hb.mp4" type="video/mp4"></video>
               <h3 style="color:var(--blue); font-size:1.1rem; margin:0;">KARDEXIA - IA</h3>
             </div>
-            <p style="color:var(--muted); font-size:0.85rem; line-height:1.5; margin-bottom:20px;">Ingresa tu API Key de Google Gemini para activar el asistente de chat integrado.</p>
+            <p style="color:var(--muted); font-size:0.85rem; line-height:1.5; margin-bottom:20px;">Ingresa tu API Key de Groq (Llama 3.3) para activar el asistente de chat integrado a velocidad ultrarrápida.</p>
             <div style="display:flex; flex-direction: column; gap:10px;">
               <input type="password" id="gemini-api-key" class="form-control" placeholder="API Key aquí..." style="width:100%;">
               <button class="btn-submit" onclick="guardarApiKey()" style="margin:0; background:linear-gradient(135deg,var(--blue),#1d4ed8); width: 100%;">💾 Guardar API Key</button>
             </div>
           </div>
 
-          <!-- Columna 3: Gestión de Personal -->
-          <div class="panel-card" style="min-width: 480px; max-width: 480px; padding: 25px; background:#0f172a; border:1px solid #1e293b; border-radius: 12px;">
+          <!-- Gestión de Personal -->
+          <div class="panel-card" style="flex: 2; min-width: 350px; max-width: 600px; padding: 25px; background:#0f172a; border:1px solid #1e293b; border-radius: 12px;">
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
               <span style="font-size: 1.5rem;">🔐</span>
               <h3 style="color:#8b5cf6; font-size:1.1rem; margin:0;">Gestión de Accesos</h3>
@@ -1650,12 +1650,6 @@ select.form-control option{
             </div>
           </div>
           
-          <!-- Espacio reservado para futuras columnas -->
-          <div class="panel-card" style="min-width: 320px; max-width: 320px; padding: 25px; background:rgba(255,255,255,0.02); border:1px dashed rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; flex-direction:column; color:var(--muted); border-radius: 12px; height: 100%;">
-             <span style="font-size:2rem; margin-bottom:10px;">➕</span>
-             <span style="font-size:0.85rem;">Próximas Configuraciones</span>
-          </div>
-
         </div>
       </div>
     </div>
@@ -1846,7 +1840,7 @@ select.form-control option{
 
       <div class="form-group">
         <label>OBSERVACIÓN</label>
-        <input type="text" id="m-observacion" class="form-control" list="datalist-obs" placeholder="Ej. Detalles extra o seleccione una opción...">
+        <input type="text" id="m-observacion" class="form-control" list="datalist-obs" placeholder="Ej. Detalles extra o seleccione una opción..." autocomplete="off">
         <datalist id="datalist-obs">
           <option value="Consumo regular">
           <option value="Transferencia a Emergencia">
@@ -2101,6 +2095,20 @@ select.form-control option{
     <div style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.3); padding:10px 12px; border-radius:8px; border-bottom-left-radius:0; color:var(--text); font-size:0.85rem; align-self:flex-start; max-width:85%;">
       ¡Hola! Soy tu asistente de inventario. Pregúntame sobre el stock actual, tendencias o vencimientos.
     </div>
+    
+    <!-- CONSULTAS EJECUTIVAS -->
+    <div style="margin-top:5px; margin-bottom:5px;">
+      <div style="font-size:0.65rem; color:var(--muted); font-weight:bold; letter-spacing:1px; margin-bottom:10px; text-transform:uppercase;">CONSULTAS EJECUTIVAS RÁPIDAS:</div>
+      <button onclick="document.getElementById('ai-chat-input').value='¿Qué productos están en stock crítico o agotados?'; sendChatMessage();" style="display:block; width:100%; text-align:left; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:10px 12px; border-radius:6px; margin-bottom:8px; cursor:pointer; font-size:0.85rem; font-family:inherit; transition:background 0.2s;">
+        🚨 ¿Qué productos tienen stock crítico?
+      </button>
+      <button onclick="document.getElementById('ai-chat-input').value='¿Cuáles son los lotes más próximos a vencer en todo el almacén?'; sendChatMessage();" style="display:block; width:100%; text-align:left; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:10px 12px; border-radius:6px; margin-bottom:8px; cursor:pointer; font-size:0.85rem; font-family:inherit; transition:background 0.2s;">
+        ⏳ ¿Cuáles lotes vencen más pronto?
+      </button>
+      <button onclick="document.getElementById('ai-chat-input').value='Dame un resumen ejecutivo completo de todo el inventario para una auditoría general'; sendChatMessage();" style="display:block; width:100%; text-align:left; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); color:#fff; padding:10px 12px; border-radius:6px; cursor:pointer; font-size:0.85rem; font-family:inherit; transition:background 0.2s;">
+        📋 Resumen general para auditoría
+      </button>
+    </div>
   </div>
   <div style="padding:10px; background:#18181b; border-top:1px solid #27272a; display:flex; gap:8px;">
     <input type="text" id="ai-chat-input" class="form-control" placeholder="Escribe tu consulta aquí..." style="flex:1; font-size:0.8rem;" onkeypress="if(event.key === 'Enter') sendChatMessage()">
@@ -2186,11 +2194,11 @@ window.formatLoteBadge = function(loteStr) {
           const diffTime = expDate - today;
           const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
           
-          if (diffDays > 60) {
+          if (diffDays > 90) { // Después de 3 meses = Verde
              color = 'var(--green)'; bg = 'rgba(16,185,129,0.1)'; border = 'rgba(16,185,129,0.4)'; icon = '✅';
-          } else if (diffDays <= 60 && diffDays > 30) {
+          } else if (diffDays <= 90 && diffDays > 30) { // Entre 1 y 3 meses = Amarillo
              color = 'var(--yellow)'; bg = 'rgba(234,179,8,0.1)'; border = 'rgba(234,179,8,0.4)'; icon = '⚠️';
-          } else {
+          } else { // 1 mes o menos (o vencido) = Rojo
              color = 'var(--red)'; bg = 'rgba(239,68,68,0.1)'; border = 'rgba(239,68,68,0.4)'; icon = '🚨';
           }
         }
@@ -2346,6 +2354,14 @@ function showView(viewId) {
   document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
   document.getElementById(viewId).classList.add('active');
   if(window.innerWidth <= 700) closeSidebar();
+  
+  if (viewId === 'view-dashboard') {
+    const kpiIds = ['kpi-stock', 'kpi-consumo', 'kpi-agotado', 'kpi-vence'];
+    kpiIds.forEach(id => {
+       const el = document.getElementById(id);
+       if(el) el.textContent = '0';
+    });
+  }
   
   // Re-lock the admin panel if we navigate anywhere
   if (viewId !== 'view-config-gateway') {
@@ -3020,9 +3036,9 @@ function renderInventario(onlyMinimo) {
       let priorityCounter = 1;
       let loteRows = lotesArray.map(l => {
           let rawLote = l.loteOriginal || l.key;
-          let isSinLote = l.key === 'sinlote' || (rawLote.toLowerCase().replace(/[^a-z]/g, '').includes('sinlote'));
           
-          if (l.stock === 0 && isSinLote) return '';
+          // Ocultar cualquier lote que esté agotado para no ensuciar el dashboard
+          if (l.stock <= 0) return '';
           
           // Extract Vence to style it separately
           let venceDateStr = '';
@@ -3055,27 +3071,68 @@ function renderInventario(onlyMinimo) {
               estadoBadge = `<span style="background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); color:#fca5a5; padding:4px 8px; border-radius:6px; font-weight:bold; font-size:11px;">AGOTADO</span>`;
               if (venceDateStr) venceBadge = `<span style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:var(--muted); padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold;">${venceDateStr}</span>`;
           } else {
-              if (priorityCounter === 1) {
-                  rowStyle = "background: rgba(239,68,68,0.08); border-bottom: 1px solid rgba(239,68,68,0.1);";
-                  firstTdStyle = "border-left: 4px solid #ef4444;";
-                  stockColor = "#facc15"; 
-                  priorityText = `<span style="color:#ef4444; font-weight:900; letter-spacing:0.5px;">1° DESPACHAR YA (NUEVA PRIORIDAD)</span>`;
-                  estadoBadge = `<span style="background:#ef4444; color:#fff; padding:4px 10px; border-radius:6px; font-weight:900; font-size:11px; box-shadow:0 0 10px rgba(239,68,68,0.4);">URGENTE</span>`;
-                  if (venceDateStr) venceBadge = `<span style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:#ef4444; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:bold;">⚠️ ${venceDateStr}</span>`;
-                  priorityCounter++;
-              } else if (priorityCounter === 2) {
-                  stockColor = "#facc15"; 
-                  priorityText = `<span style="color:#facc15; font-weight:900; letter-spacing:0.5px;">2° DESPUÉS DEL ANTERIOR</span>`;
-                  estadoBadge = `<span style="border:1px solid #facc15; color:#facc15; padding:4px 10px; border-radius:6px; font-weight:900; font-size:11px;">PRONTO</span>`;
-                  if (venceDateStr) venceBadge = `<span style="border:1px solid rgba(245,158,11,0.5); color:#f59e0b; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:bold;">⏳ ${venceDateStr}</span>`;
-                  priorityCounter++;
-              } else {
-                  stockColor = "#10b981"; 
-                  priorityText = `<span style="color:var(--muted); font-weight:bold;">Stock Normal</span>`;
-                  estadoBadge = `<span style="border:1px solid rgba(16,185,129,0.5); color:#10b981; padding:4px 10px; border-radius:6px; font-weight:900; font-size:11px;">SEGURO</span>`;
-                  if (venceDateStr) venceBadge = `<span style="border:1px solid rgba(16,185,129,0.5); color:#10b981; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:bold;">✓ ${venceDateStr}</span>`;
-                  priorityCounter++;
+              const daysLeft = (l.expDate - new Date().getTime()) / (1000 * 3600 * 24);
+              const isOnlyLot = lotesArray.filter(lx => lx.stock > 0).length === 1;
+              let badgeTxt = "SEGURO";
+              let col = "#10b981"; // Verde por defecto
+              let pTxt = "";
+              let bg = "rgba(16,185,129,0.08)";
+              let border = "rgba(16,185,129,0.1)";
+              let leftBorder = "#10b981";
+              
+              if (daysLeft <= 30) {
+                  col = "#ef4444"; // Rojo
+                  badgeTxt = "URGENTE";
+                  bg = "rgba(239,68,68,0.08)"; border = "rgba(239,68,68,0.1)"; leftBorder = "#ef4444";
+              } else if (daysLeft <= 90) {
+                  col = "#facc15"; // Amarillo
+                  badgeTxt = "PRONTO";
+                  bg = "rgba(234,179,8,0.08)"; border = "rgba(234,179,8,0.1)"; leftBorder = "#facc15";
               }
+              
+              rowStyle = `background: ${bg}; border-bottom: 1px solid ${border};`;
+              firstTdStyle = `border-left: 4px solid ${leftBorder};`;
+              
+              let lotStockAlert = "";
+              if (l.stock > 0 && l.stock < 20) {
+                  stockColor = "#ef4444";
+                  lotStockAlert = `<div style="font-size:9px; background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.5); padding:2px 4px; border-radius:4px; color:#fca5a5; margin-top:4px; text-shadow:none; line-height:1; white-space:nowrap;">STOCK CRÍTICO</div>`;
+                  stockText = `${l.stock}${lotStockAlert}`;
+              } else {
+                  stockColor = col === "#ef4444" || col === "#facc15" ? col : "#fff";
+              }
+              
+              if (priorityCounter === 1) {
+                  if (isOnlyLot) {
+                      pTxt = daysLeft <= 90 ? "DESPACHAR YA (VENCE PRONTO)" : "ÚNICO LOTE DISPONIBLE";
+                      if (daysLeft > 90) badgeTxt = "ÚNICO";
+                  } else {
+                      if (daysLeft <= 30) pTxt = "1° DESPACHAR YA (PRIORIDAD FEFO)";
+                      else if (daysLeft <= 90) pTxt = "1° DESPACHAR PRONTO (FEFO)";
+                      else pTxt = "1° DESPACHAR PRIMERO (FEFO)";
+                      // Si es el primero pero está seguro, pintamos de azul informativo
+                      if (daysLeft > 90) {
+                          col = "#3b82f6";
+                          badgeTxt = "TURNO 1";
+                          bg = "rgba(59,130,246,0.08)"; border = "rgba(59,130,246,0.1)"; leftBorder = "#3b82f6";
+                          rowStyle = `background: ${bg}; border-bottom: 1px solid ${border};`;
+                          firstTdStyle = `border-left: 4px solid ${leftBorder};`;
+                      }
+                  }
+              } else {
+                  pTxt = `${priorityCounter}° DESPUÉS DEL ANTERIOR`;
+                  if (daysLeft > 90) badgeTxt = "EN ESPERA";
+              }
+              
+              priorityText = `<span style="color:${col}; font-weight:900; letter-spacing:0.5px;">${pTxt}</span>`;
+              if (daysLeft <= 90 || priorityCounter === 1) {
+                  estadoBadge = `<span style="background:${col}; color:${col==='#facc15'?'#000':'#fff'}; padding:4px 10px; border-radius:6px; font-weight:900; font-size:11px; box-shadow:0 0 10px ${col}66;">${badgeTxt}</span>`;
+              } else {
+                  estadoBadge = `<span style="border:1px solid ${col}; color:${col}; padding:4px 10px; border-radius:6px; font-weight:900; font-size:11px;">${badgeTxt}</span>`;
+              }
+              if (venceDateStr) venceBadge = `<span style="border:1px solid ${col}80; color:${col}; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:bold;">${daysLeft<=30?'🚨':(daysLeft<=90?'⚠️':'⏳')} ${venceDateStr}</span>`;
+              
+              priorityCounter++;
           }
           
           return `<tr class="sub-lote lote-de-${v.codigo}" style="display:none; ${rowStyle} opacity:${opacity};">
@@ -3788,16 +3845,84 @@ window.procesarExcelHistorico = function(input) {
                 // Tratar de obtener código si existe, sino usar un hash del nombre
                 let cod = colCod !== -1 ? String(row[colCod] || '').trim() : '';
                 
+                // Si el Excel trae un código basura temporal, lo borramos para forzar la re-búsqueda
+                if (cod.startsWith("GEN-") || cod.startsWith("TEMP-")) {
+                    cod = "";
+                }
+                
                 if (!nom || nom.length < 3) continue;
                 
                 // Si no hay código en el Excel, intentamos buscarlo en la base de datos por nombre
                 if (!cod) {
-                    // Limpieza agresiva para mejor coincidencia (quitar tildes, comillas, etc)
-                    const cleanNom = nom.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9 ]/g, "").trim();
-                    const prodMatch = window.KARDEX_DATA ? window.KARDEX_DATA.find(p => {
-                        const dbName = String(p.nombre || '').toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9 ]/g, "").trim();
-                        return dbName.includes(cleanNom) || cleanNom.includes(dbName);
-                    }) : null;
+                    // Concatenar nombre y presentación porque en el Excel están separados pero en Kardex están juntos
+                    let excelPres = colPres !== -1 ? String(row[colPres] || '') : '';
+                    let fullName = (nom + " " + excelPres).trim();
+                    
+                    // Limpieza agresiva: reemplazar caracteres especiales por ESPACIOS para separar 'T/L' en 'T' y 'L'
+                    const cleanNom = fullName.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9]/g, " ").replace(/\s+/g, " ").trim();
+                    const wordsNom = cleanNom.split(' ').filter(w => w.length > 0);
+                    
+                    let bestMatch = null;
+                    let bestScore = 0;
+                    
+                    const kardexArray = typeof KARDEX_DATA !== 'undefined' ? KARDEX_DATA : [];
+                    if (kardexArray.length > 0) {
+                        for (let p of kardexArray) {
+                            if (!p.codigo || p.codigo === 'S/C') continue; // Ignorar productos sin código real
+                            
+                            // Limpieza profunda: reemplazar caracteres especiales por ESPACIOS para separar 'T/L' en 'T' y 'L'
+                            let dbNameRaw = String(p.nombre || '').toUpperCase().replace(/\[.*?\]/g, '');
+                            const dbName = dbNameRaw.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Z0-9]/g, " ").replace(/\s+/g, " ").trim();
+                            
+                            // Coincidencia exacta
+                            if (dbName === cleanNom || dbName === fullName.toUpperCase()) {
+                                bestMatch = p;
+                                break;
+                            }
+                            
+                            const wordsDb = dbName.split(' ').filter(w => w.length > 0);
+                            let score = 0;
+                            for (let w of wordsNom) {
+                                if (wordsDb.includes(w)) {
+                                    score++;
+                                } else if (w.length >= 4) {
+                                    // Permitir coincidencias parciales seguras para palabras largas (ej. PERFORADOR vs PERFORADORA, o plurales)
+                                    if (wordsDb.some(wd => wd.length >= 4 && (wd.includes(w) || w.includes(wd)))) {
+                                        score++;
+                                    }
+                                }
+                            }
+                            
+                            // Penalizar fuertemente si hay diferencias en tallas (S, M, L, XL)
+                            const tallas = ['S', 'M', 'L', 'XL'];
+                            let tallaMatch = true;
+                            for (let t of tallas) {
+                                if (wordsNom.includes(t) && !wordsDb.includes(t)) tallaMatch = false;
+                                if (!wordsNom.includes(t) && wordsDb.includes(t)) tallaMatch = false;
+                            }
+                            
+                            // Penalizar si hay un número en el Excel que no coincide con un número en el Kardex
+                            // Pero SOLO si el Kardex también tiene números (para permitir que "Guantes X 100" coincida con "Guantes")
+                            const numerosNom = wordsNom.filter(w => !isNaN(w) && w.trim() !== '');
+                            const numerosDb = wordsDb.filter(w => !isNaN(w) && w.trim() !== '');
+                            let numeroMatch = true;
+                            if (numerosNom.length > 0 && numerosDb.length > 0) {
+                                for (let num of numerosNom) {
+                                    if (!numerosDb.includes(num)) numeroMatch = false;
+                                }
+                            }
+                            
+                            if (!tallaMatch || !numeroMatch) continue; // Si la talla o número crítico no coincide, descartar
+                            
+                            // Validar usando el mínimo de palabras para permitir emparejar nombres parciales con nombres largos
+                            const matchPercentage = score / Math.min(wordsNom.length, wordsDb.length);
+                            if (matchPercentage >= 0.6 && score > bestScore) {
+                                bestScore = score;
+                                bestMatch = p;
+                            }
+                        }
+                    }
+                    const prodMatch = bestMatch;
                     
                     if (prodMatch && prodMatch.codigo) {
                         cod = prodMatch.codigo;
@@ -3808,7 +3933,7 @@ window.procesarExcelHistorico = function(input) {
                         if (existingFake) {
                             cod = existingFake.codigo;
                         } else {
-                            cod = "GEN-" + String(codigoInventadoCounter).padStart(3, '0');
+                            cod = "TEMP-" + String(codigoInventadoCounter).padStart(3, '0');
                             codigoInventadoCounter++;
                         }
                     }
@@ -4364,20 +4489,20 @@ window.exportBalanceMensual = async function(esPrevia = false) {
       const t = String(r.tipo||'').trim().toLowerCase();
       
       if (rDate < startDate) {
-        if (t === 'entrada' || t === 'ajuste' || t === 'ajuste (anulación)') {
+        if (t === 'entrada' || t === 'prestamo' || t === 'ajuste' || t === 'ajuste (anulación)') {
           prodData.saldoAnterior += ent;
           if (fExp !== 'S/N') prodData.lotesStock[fExp] += ent;
         }
-        if (t === 'salida' || t === 'ajuste' || t === 'ajuste (anulación)') {
+        if (t === 'salida' || t === 'descarte' || t === 'devolucion' || t === 'ajuste' || t === 'ajuste (anulación)') {
           prodData.saldoAnterior -= sal;
           if (fExp !== 'S/N') prodData.lotesStock[fExp] -= sal;
         }
       } else {
-        if (t === 'entrada') {
+        if (t === 'entrada' || t === 'prestamo') {
           prodData.ingresos += ent;
           if (fExp !== 'S/N') prodData.lotesStock[fExp] += ent;
         }
-        if (t === 'salida') {
+        if (t === 'salida' || t === 'descarte' || t === 'devolucion') {
           prodData.consumos += sal;
           if (fExp !== 'S/N') prodData.lotesStock[fExp] -= sal;
         }
@@ -5461,6 +5586,42 @@ function pageFlipTransition(callback) {
   }, 150);
 }
 
+// Efecto de Numeros
+window.countUp = function(element, finalValue) {
+  if(!element) return;
+  const duration = 1500;
+  const frameDuration = 1000 / 60;
+  const totalFrames = Math.round(duration / frameDuration);
+  let frame = 0;
+  
+  let currentText = element.textContent.replace(/[^0-9.-]/g, '');
+  const startValue = parseInt(currentText) || 0;
+  
+  if (startValue === finalValue) {
+      element.textContent = finalValue.toLocaleString('es-PE');
+      return;
+  }
+  
+  const color = window.getComputedStyle(element).color || 'rgba(59,130,246,0.8)';
+  element.style.textShadow = `0 0 10px ${color}, 0 0 20px ${color}`;
+  element.style.transition = "text-shadow 0.2s ease-in-out, transform 0.2s ease-in-out";
+  element.style.transform = "scale(1.05)";
+  
+  const increment = (finalValue - startValue) / totalFrames;
+  const timer = setInterval(() => {
+    frame++;
+    const currentVal = Math.round(startValue + (increment * frame));
+    element.textContent = currentVal.toLocaleString('es-PE');
+    
+    if(frame >= totalFrames) {
+      clearInterval(timer);
+      element.textContent = finalValue.toLocaleString('es-PE');
+      element.style.textShadow = "";
+      element.style.transform = "scale(1)";
+    }
+  }, frameDuration);
+};
+
 // KPIs y Alertas
 function updateKPIs() {
   try {
@@ -5550,7 +5711,7 @@ function updateKPIs() {
     const elConsumo = document.getElementById('kpi-consumo');
     if(elConsumo) countUp(elConsumo, consumo30d);
     const elAgotado = document.getElementById('kpi-agotado');
-    if(elAgotado) elAgotado.textContent = countAgotado;
+    if(elAgotado) countUp(elAgotado, countAgotado);
     
     // Calcular lotes en riesgo
     let balancesLotes = {};
@@ -5582,7 +5743,7 @@ function updateKPIs() {
       }
     }
     const elVence = document.getElementById('kpi-vence');
-    if(elVence) elVence.textContent = lotesRiesgoCount;
+    if(elVence) countUp(elVence, lotesRiesgoCount);
   
     // Top 5 DOM
     const top5Container = document.getElementById('top-5-container');
@@ -5998,6 +6159,12 @@ if(typeof google !== 'undefined') {
   google.script.run.withSuccessHandler(function(datos) {
     try {
       KARDEX_DATA = datos;
+      // Parche retroactivo para que reportes e historial siempre muestren la cantidad
+      KARDEX_DATA.forEach(r => {
+         if (r && r.tipo === 'Salida' && r.observacion && String(r.observacion).toUpperCase().includes('EMERGENCIA') && !String(r.observacion).includes(String(r.salida))) {
+             r.observacion = `${r.observacion} (SE TRANSFIERE ${r.salida} A EMERGENCIA)`.trim();
+         }
+      });
       applyFilters();
     } catch(e) {
       if(tbody) tbody.innerHTML = `<tr><td colspan="10" style="color:red;text-align:center;">Error inicializando: ${e.message}</td></tr>`;
@@ -6127,6 +6294,20 @@ window.confirmarGuardadoContingencia = function(force = false, bypassPin = false
   // No añadir [UNIDAD(ES)] forzadamente para no duplicar los nombres base
   // nombreF += ' [UNIDAD(ES)]';
   
+  const areaVal = document.getElementById('c-area').value;
+  let obsFinal = document.getElementById('c-observacion').value.trim();
+
+  const isEmergency = areaVal.toUpperCase().includes('EMERGENCIA') || obsFinal.toUpperCase().includes('EMERGENCIA');
+  
+  if (tipoVal === 'Salida' && isEmergency) {
+      let prodName = nombreF.replace(/\[.*?\]/g, '').trim();
+      if (obsFinal === '' || obsFinal.toUpperCase() === 'TRANSFERENCIA A EMERGENCIA') {
+          obsFinal = `SE TRANSFIERE ${cant} ${prodName} A EMERGENCIA`;
+      } else if (!obsFinal.includes(cant) || !obsFinal.includes(prodName)) {
+          obsFinal = `${obsFinal} (SE TRANSFIERE ${cant} ${prodName} A EMERGENCIA)`.trim();
+      }
+  }
+
   const datos = {
     fecha: document.getElementById('c-fecha').value,
     hora: document.getElementById('c-hora').value,
@@ -6141,8 +6322,8 @@ window.confirmarGuardadoContingencia = function(force = false, bypassPin = false
     salida: (tipoVal === 'Salida' || tipoVal === 'Devolucion' || tipoVal === 'Descarte') ? cant : '',
     usuario: document.getElementById('c-usuario').value,
     pin: pin,
-    area: document.getElementById('c-area').value,
-    observacion: document.getElementById('c-observacion').value
+    area: areaVal,
+    observacion: obsFinal
   };
   
   if(typeof google !== 'undefined') {
@@ -6344,6 +6525,20 @@ window.confirmarGuardado = function(force = false, bypassPin = false) {
     : parseFloat(document.getElementById('m-cantidad').getAttribute('data-raw-value') || document.getElementById('m-cantidad').value) || 0;
 
   const tipoVal = document.getElementById('m-tipo').value;
+  const areaVal = document.getElementById('m-area').value;
+  let obsFinal = document.getElementById('m-observacion').value.trim();
+
+  const isEmergency = areaVal.toUpperCase().includes('EMERGENCIA') || obsFinal.toUpperCase().includes('EMERGENCIA');
+
+  if (tipoVal === 'Salida' && isEmergency) {
+      let prodName = nombreF.replace(/\[.*?\]/g, '').trim();
+      if (obsFinal === '' || obsFinal.toUpperCase() === 'TRANSFERENCIA A EMERGENCIA') {
+          obsFinal = `SE TRANSFIERE ${cantidadRaw} ${prodName} A EMERGENCIA`;
+      } else if (!obsFinal.includes(cantidadRaw) || !obsFinal.includes(prodName)) {
+          obsFinal = `${obsFinal} (SE TRANSFIERE ${cantidadRaw} ${prodName} A EMERGENCIA)`.trim();
+      }
+  }
+
   const datos = {
     fecha: document.getElementById('m-fecha').value,
     hora: document.getElementById('m-hora').value,
@@ -6358,8 +6553,8 @@ window.confirmarGuardado = function(force = false, bypassPin = false) {
     salida: (tipoVal === 'Salida' || tipoVal === 'Devolucion' || tipoVal === 'Descarte') ? cantidadRaw : '',
     usuario: document.getElementById('m-usuario').value,
     pin: pin,
-    area: document.getElementById('m-area').value,
-    observacion: document.getElementById('m-observacion').value
+    area: areaVal,
+    observacion: obsFinal
   };
   
   if(typeof google !== 'undefined') {
@@ -6709,17 +6904,32 @@ window.triggerAutocomplete = function(sourceId) {
   mCantidad.placeholder = '0.00';
   document.getElementById('m-lote').placeholder = '';
 
-  let registro = null;
+  let registrosEncontrados = [];
   for (let i = KARDEX_DATA.length - 1; i >= 0; i--) {
     let r = KARDEX_DATA[i];
+    if (r.observacion && String(r.observacion).includes('[ANULADO]')) continue;
     let rNom = (r.nombre || '').replace(/\[.*?\]/g, '').trim().toLowerCase();
     let rCod = (r.codigo || '').toLowerCase();
     if((sourceId === 'm-codigo' && rCod === val) || (sourceId === 'm-nombre' && rNom === val)) {
-      registro = r;
-      break;
+      registrosEncontrados.push(r);
     }
   }
-  if(!registro) return;
+  
+  if(registrosEncontrados.length === 0) return;
+
+  // Encontrar el registro más frecuente para evitar arrastrar errores tipográficos
+  let counts = {};
+  let maxCount = 0;
+  let registro = registrosEncontrados[0]; // fallback al más reciente
+  
+  registrosEncontrados.forEach(r => {
+     let key = sourceId === 'm-nombre' ? (r.codigo || '') : (r.nombre || '');
+     counts[key] = (counts[key] || 0) + 1;
+     if (counts[key] > maxCount) {
+         maxCount = counts[key];
+         registro = r;
+     }
+  });
   
   const codReal = registro.codigo;
   
@@ -6766,8 +6976,8 @@ window.triggerAutocomplete = function(sourceId) {
     KARDEX_DATA.filter(r => r.codigo === codReal && (!r.observacion || !String(r.observacion).includes('[ANULADO]'))).forEach(r => {
       const lKey = normLoteKey(r.lote);
       if(!lotes[lKey]) lotes[lKey] = { stock: 0, loteOriginal: r.lote || '', vence: '' };
-      if(r.tipo === 'Entrada') lotes[lKey].stock += Number(r.entrada||0);
-      if(r.tipo === 'Salida') lotes[lKey].stock -= Number(r.salida||0);
+      if(r.tipo === 'Entrada' || r.tipo === 'Prestamo') lotes[lKey].stock += Number(r.entrada||0);
+      if(r.tipo === 'Salida' || r.tipo === 'Descarte' || r.tipo === 'Devolucion') lotes[lKey].stock -= Number(r.salida||0);
       if(r.tipo === 'Ajuste') {
         lotes[lKey].stock += Number(r.entrada||0);
         lotes[lKey].stock -= Number(r.salida||0);
@@ -7165,11 +7375,11 @@ window.eliminarUsuarioConfigUI = function(nombre) {
   };
 };
 
-// Lógica del Copiloto IA (Gemini)
+// Lógica del Copiloto IA (Groq - Llama 3.3 70b)
 window.addEventListener('load', () => {
-  const savedKey = localStorage.getItem('GEMINI_API_KEY');
+  const savedKey = localStorage.getItem('GROQ_API_KEY');
   if(savedKey) {
-    const el = document.getElementById('gemini-api-key');
+    const el = document.getElementById('gemini-api-key'); // Mantenemos el ID del input para no romper el HTML
     if(el) el.value = savedKey;
   }
 });
@@ -7177,8 +7387,22 @@ window.addEventListener('load', () => {
 window.guardarApiKey = function() {
   const key = document.getElementById('gemini-api-key').value.trim();
   if(!key) { showCustomAlert("Por favor ingresa una API Key válida.", "Error", true); return; }
-  localStorage.setItem('GEMINI_API_KEY', key);
-  showCustomAlert("API Key guardada correctamente en este navegador.", "Éxito");
+  
+  // Guardamos en el backend para que sea permanente (soluciona el reseteo del iframe)
+  if (typeof google !== 'undefined' && google.script) {
+    showCustomAlert("Guardando API Key de forma segura...", "Información");
+    google.script.run.withSuccessHandler(function(res) {
+      // También la guardamos en localStorage como respaldo local
+      localStorage.setItem('GROQ_API_KEY', key);
+      showCustomAlert("API Key guardada de forma PERMANENTE en el servidor.", "Éxito");
+    }).withFailureHandler(function(err) {
+      showCustomAlert("Error al guardar en el servidor: " + err.message, "Error");
+    }).guardarApiKeyConfig(key);
+  } else {
+    // Modo local (fuera de Apps Script)
+    localStorage.setItem('GROQ_API_KEY', key);
+    showCustomAlert("API Key guardada en el navegador (Modo Local).", "Éxito");
+  }
 };
 
 window.toggleChat = function() {
@@ -7196,11 +7420,11 @@ window.sendChatMessage = async function() {
   const msg = inputEl.value.trim();
   if(!msg) return;
   
-  const apiKey = localStorage.getItem('GEMINI_API_KEY');
-  if(!apiKey) {
-    showCustomAlert("Primero debes configurar tu API Key de Gemini en la pestaña de Configuración.", "Atención", true);
-    return;
-  }
+  // const apiKey = localStorage.getItem('GROQ_API_KEY');
+  // if(!apiKey) {
+  //   showCustomAlert("Primero debes configurar tu API Key de Groq en la pestaña de Configuración.", "Atención", true);
+  //   return;
+  // }
   
   const chatMessages = document.getElementById('ai-chat-messages');
   
@@ -7216,73 +7440,150 @@ window.sendChatMessage = async function() {
   const loadingDiv = document.createElement('div');
   loadingDiv.id = loadingId;
   loadingDiv.style.cssText = "background:rgba(255,255,255,0.05); color:var(--muted); padding:10px 12px; border-radius:8px; border-bottom-left-radius:0; font-size:0.85rem; align-self:flex-start; max-width:85%;";
-  loadingDiv.textContent = "Analizando datos... 🧠";
+  loadingDiv.textContent = "Analizando datos a velocidad luz... ⚡";
   chatMessages.appendChild(loadingDiv);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 
   let inventorySummary = "Resumen del inventario:\n";
-  if(window.KARDEX_DATA && window.KARDEX_DATA.length > 0) {
+  if(typeof KARDEX_DATA !== 'undefined' && KARDEX_DATA && KARDEX_DATA.length > 0) {
+    let historialCompacto = [];
     const invMap = {};
-    window.KARDEX_DATA.forEach(r => {
+    
+    KARDEX_DATA.forEach(r => {
        if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
        if (r.tipo === 'Ajuste (Anulación)') return;
        let cod = r.codigo;
-       if(!invMap[cod]) invMap[cod] = { n: r.nombre, stock: 0 };
-       if(r.tipo === 'Entrada' || r.tipo === 'Prestamo') invMap[cod].stock += (Number(r.entrada) || 0);
-       if(r.tipo === 'Salida' || r.tipo === 'Devolucion' || r.tipo === 'Descarte') invMap[cod].stock -= (Number(r.salida) || 0);
+       if (!cod || cod === 'S/C' || cod === 'S/M') cod = r.nombre;
+       let lote = (r.lote || 'SIN LOTE').trim();
+       
+       if(!invMap[cod]) invMap[cod] = { n: r.nombre, stockTotal: 0, lotes: {} };
+       if(!invMap[cod].lotes[lote]) invMap[cod].lotes[lote] = 0;
+       
+       let mov = 0;
+       if(r.tipo === 'Entrada' || r.tipo === 'Prestamo') mov = Number(r.entrada) || 0;
+       if(r.tipo === 'Salida' || r.tipo === 'Devolucion' || r.tipo === 'Descarte') mov = -(Number(r.salida) || 0);
        if(String(r.tipo).includes('Ajuste')) { 
-           invMap[cod].stock += (Number(r.entrada) || 0); 
-           invMap[cod].stock -= (Number(r.salida) || 0); 
+           mov += (Number(r.entrada) || 0); 
+           mov -= (Number(r.salida) || 0); 
        }
+       
+       invMap[cod].stockTotal += mov;
+       invMap[cod].lotes[lote] += mov;
     });
+    
+    // Inyectar historial de movimientos (combinar extremos para cubrir el caso de orden ascendente o descendente en Google Sheets)
+    let totalMovs = KARDEX_DATA.length;
+    let movsParaIA = [];
+    if (totalMovs <= 40) {
+        movsParaIA = KARDEX_DATA;
+    } else {
+        movsParaIA = [...KARDEX_DATA.slice(0, 20), ...KARDEX_DATA.slice(totalMovs - 20)];
+    }
+    
+    movsParaIA.forEach(r => {
+       if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
+       let cant = r.entrada ? `+${r.entrada}` : `-${r.salida}`;
+       let obs = r.observacion ? `|Obs:${r.observacion}` : '';
+       historialCompacto.push(`[${r.fecha}]${r.tipo.slice(0,3)}:${r.nombre}|${cant}|L:${r.lote || 'S/L'}|${r.usuario || 'N/A'}${obs}`);
+    });
+    
+    let allStock = [];
     let lowStock = [];
     Object.keys(invMap).forEach(k => {
-       if(invMap[k].stock < 20) {
-           lowStock.push(invMap[k].n + " (Stock: " + invMap[k].stock + ")");
+       if (invMap[k].stockTotal > 0 || invMap[k].stockTotal < 20) { 
+           let pStr = `${invMap[k].n}:${invMap[k].stockTotal}`;
+           let lotesStrArr = [];
+           for (let lKey in invMap[k].lotes) {
+               if (invMap[k].lotes[lKey] > 0) {
+                   lotesStrArr.push(`${lKey}=>${invMap[k].lotes[lKey]}`);
+               }
+           }
+           if(lotesStrArr.length > 0) pStr += `[${lotesStrArr.join(",")}]`;
+           allStock.push(pStr);
+       }
+       if(invMap[k].stockTotal < 20) {
+           lowStock.push(`${invMap[k].n}(${invMap[k].stockTotal})`);
        }
     });
+    
+    const fechaHoy = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+    inventorySummary = `FECHA ACTUAL: ${fechaHoy}\n\n` + inventorySummary;
+    inventorySummary += "INVENTARIO ACTUAL COMPLETO:\n" + allStock.join('\n') + "\n\n";
     inventorySummary += "Productos Críticos: " + (lowStock.length > 0 ? lowStock.join(', ') : 'Ninguno') + ".\n";
     inventorySummary += "Total de tipos de productos: " + Object.keys(invMap).length + ".\n";
-  }
-
-  const promptText = "Eres Kardex Copilot, asistente del almacén. Responde breve y humano. Usuario pregunta: '" + msg + "'. Contexto:\n" + inventorySummary;
-
-  try {
-    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + apiKey, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: promptText }] }],
-        generationConfig: { temperature: 0.3 }
-      })
-    });
     
-    const data = await response.json();
-    const lDiv = document.getElementById(loadingId);
-    if(lDiv) lDiv.remove();
-    
-    const replyDiv = document.createElement('div');
-    if (data.error) {
-       replyDiv.style.cssText = "background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:var(--red); padding:10px 12px; border-radius:8px; border-bottom-left-radius:0; font-size:0.85rem; align-self:flex-start; max-width:85%;";
-       replyDiv.textContent = "Error de API: " + data.error.message;
+    if (historialCompacto.length > 0) {
+        inventorySummary += "\nHISTORIAL DE MOVIMIENTOS RECIENTES (ÚLTIMOS " + historialCompacto.length + "):\n" + historialCompacto.join('\n') + "\n";
     } else {
-       const reply = data.candidates[0].content.parts[0].text;
-       const formattedReply = reply.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
-       const avatarHtml = "<div style=\"width:28px; height:28px; border-radius:50%; background:#000; flex-shrink:0; overflow:hidden; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.1); margin-right:8px;\"><video autoplay loop muted playsinline style=\"width:140%; height:140%; object-fit:cover; mix-blend-mode:screen;\"><source src=\"https://i.imgur.com/mv790hb.mp4\" type=\"video/mp4\"></video></div>";
-       replyDiv.style.cssText = "display:flex; align-items:flex-end; align-self:flex-start; max-width:90%;";
-       replyDiv.innerHTML = avatarHtml + "<div style=\"background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.3); color:var(--text); padding:10px 12px; border-radius:8px; border-bottom-left-radius:0; font-size:0.85rem;\">" + formattedReply + "</div>";
+        inventorySummary += "\nHISTORIAL DE MOVIMIENTOS RECIENTES:\nSin movimientos en el historial.\n";
     }
-    chatMessages.appendChild(replyDiv);
-  } catch (error) {
-    const lDiv = document.getElementById(loadingId);
-    if(lDiv) lDiv.remove();
-    const errDiv = document.createElement('div');
-    errDiv.style.cssText = "background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:var(--red); padding:10px 12px; border-radius:8px; border-bottom-left-radius:0; font-size:0.85rem; align-self:flex-start; max-width:85%;";
-    errDiv.textContent = "Error de conexión con la IA. Verifica tu internet y tu API Key.";
-    chatMessages.appendChild(errDiv);
   }
-  
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+
+  const promptText = "Contexto:\n" + inventorySummary + "\n\nPregunta del usuario: '" + msg + "'";
+
+  if (typeof google !== 'undefined' && google.script) {
+    google.script.run.withSuccessHandler(async function(apiKey) {
+      try {
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + apiKey
+          },
+          body: JSON.stringify({
+            model: "llama-3.3-70b-versatile",
+            messages: [
+              { role: "system", content: "Eres un asistente experto en análisis de datos de Kardex e Inventarios hospitalarios. Responde de manera concisa y analítica." },
+              { role: "user", content: promptText }
+            ],
+            temperature: 0.2
+          })
+        });
+        
+        const json = await response.json();
+        const lDiv = document.getElementById(loadingId);
+        if(lDiv) lDiv.remove();
+        
+        const replyDiv = document.createElement('div');
+        if (!response.ok) {
+           replyDiv.style.cssText = "background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:var(--red); padding:10px 12px; border-radius:8px; border-bottom-left-radius:0; font-size:0.85rem; align-self:flex-start; max-width:85%;";
+           replyDiv.textContent = "Error de API: " + (json.error ? json.error.message : "Error HTTP " + response.status);
+        } else {
+           const reply = json.choices[0].message.content;
+           const formattedReply = reply.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+           const avatarHtml = "<div style=\"width:28px; height:28px; border-radius:50%; background:#000; flex-shrink:0; overflow:hidden; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.1); margin-right:8px;\"><video autoplay loop muted playsinline style=\"width:140%; height:140%; object-fit:cover; mix-blend-mode:screen;\"><source src=\"https://i.imgur.com/mv790hb.mp4\" type=\"video/mp4\"></video></div>";
+           replyDiv.style.cssText = "display:flex; align-items:flex-end; align-self:flex-start; max-width:90%;";
+           replyDiv.innerHTML = avatarHtml + "<div style=\"background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.3); color:var(--text); padding:10px 12px; border-radius:8px; border-bottom-left-radius:0; font-size:0.85rem;\">" + formattedReply + "</div>";
+        }
+        chatMessages.appendChild(replyDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      } catch (error) {
+        const lDiv = document.getElementById(loadingId);
+        if(lDiv) lDiv.remove();
+        const errDiv = document.createElement('div');
+        errDiv.style.cssText = "background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:var(--red); padding:10px 12px; border-radius:8px; border-bottom-left-radius:0; font-size:0.85rem; align-self:flex-start; max-width:85%;";
+        errDiv.textContent = "Error local de conexión a Groq: " + error.message;
+        chatMessages.appendChild(errDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+    }).withFailureHandler(function(error) {
+        const lDiv = document.getElementById(loadingId);
+        if(lDiv) lDiv.remove();
+        const errDiv = document.createElement('div');
+        errDiv.style.cssText = "background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:var(--red); padding:10px 12px; border-radius:8px; border-bottom-left-radius:0; font-size:0.85rem; align-self:flex-start; max-width:85%;";
+        errDiv.textContent = "Error: " + error;
+        chatMessages.appendChild(errDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }).getApiKeyConfig();
+  } else {
+     const lDiv = document.getElementById(loadingId);
+     if(lDiv) lDiv.remove();
+     const errDiv = document.createElement('div');
+     errDiv.style.cssText = "background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:var(--red); padding:10px 12px; border-radius:8px; border-bottom-left-radius:0; font-size:0.85rem; align-self:flex-start; max-width:85%;";
+     errDiv.textContent = "Entorno local de prueba. La IA requiere conexión con Google Apps Script.";
+     chatMessages.appendChild(errDiv);
+     chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
 };
 
 // Cargar usuarios al inicio
