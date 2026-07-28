@@ -83,22 +83,25 @@ function registrarMovimiento(datos) {
     let ultimoSaldoLote = 0;
     let ultimoSaldoGlobal = 0;
     
-    // Normalizar: quitar caracteres especiales, espacios, mayúsculas
     const normalize = (str) => String(str || "").toLowerCase().replace(/[^a-z0-9]/g, '');
     // Para el lote usamos SOLO la primera parte (antes del |) para no fallar por diferencias en Marca/Vence
     const extractLoteNum = (str) => normalize(String(str || "").split("|")[0]);
     
-    const targetCodigo = normalize(datos.codigo);
+    let targetKey = normalize(datos.codigo);
+    if (!targetKey) targetKey = normalize(datos.nombre);
+    
     const targetLote = extractLoteNum(datos.lote);
 
     for (let i = 1; i < data.length; i++) {
       // Ignorar anulados
       if (String(data[i][11] || "").includes("[ANULADO]")) continue;
       
-      const rowCodigo = normalize(data[i][3]);
+      let rowKey = normalize(data[i][3]);
+      if (!rowKey) rowKey = normalize(data[i][4]);
+      
       const rowLote = extractLoteNum(data[i][6]);
       
-      if (rowCodigo === targetCodigo) {
+      if (rowKey === targetKey) {
          const rowTipo = String(data[i][2]).trim();
          const rowEntrada = Number(data[i][7]) || 0;
          const rowSalida = Number(data[i][8]) || 0;
@@ -174,13 +177,13 @@ function registrarMovimiento(datos) {
     // 7. Insertar fila en Google Sheets
     sheet.appendRow([
       fecha, hora, datos.tipo, datos.codigo, datos.nombre, datos.tipo2,
-      datos.lote || "", entrada, salida, nuevoSaldoLote, datos.usuario,
+      datos.lote || "", entrada, salida, nuevoSaldoGlobal, datos.usuario,
       datos.observacion || "", datos.area || "", datos.comprobante || "",
       "NO", movId
     ]);
 
-    // 8. Alerta en tiempo real por stock crítico GLOBAL (solo si baja a 5 o menos en total)
-    if (ultimoSaldoGlobal > 5 && nuevoSaldoGlobal <= 5) {
+    // 8. Alerta en tiempo real por stock crítico GLOBAL (solo si baja de 20 en total)
+    if (ultimoSaldoGlobal >= 20 && nuevoSaldoGlobal < 20) {
       try {
         enviarAlertaCriticaRealTime(datos.nombre, "TODOS LOS LOTES", nuevoSaldoGlobal);
       } catch(e) {
@@ -375,8 +378,16 @@ function getUsuarios() {
   
   if (!sheet) {
     sheet = ss.insertSheet("Usuarios");
-    sheet.appendRow(["Usuario", "PIN", "Rol"]);
-    sheet.getRange("A1:C1").setFontWeight("bold").setBackground("#d9ead3");
+    sheet.appendRow(["Usuario", "PIN", "Correo", "Rol"]);
+    sheet.getRange("A1:D1").setFontWeight("bold").setBackground("#d9ead3");
+  } else {
+    // Migración automática: Si la hoja antigua solo tiene 3 columnas y la columna C es "Rol"
+    const header = sheet.getRange("A1:D1").getValues()[0];
+    if (String(header[2]).trim() === "Rol" || String(header[2]).trim() === "") {
+       sheet.insertColumnBefore(3);
+       sheet.getRange("C1").setValue("Correo");
+       sheet.getRange("D1").setValue("Rol");
+    }
   }
   
   const data = sheet.getDataRange().getValues();
@@ -395,17 +406,17 @@ function getUsuarios() {
       if (u === "Maria S." || u === "María S." || u === "Junior E." || u === "Dr. Aarón") rol = "Personal de Almacén";
       
       const pin = (u === "Christian R.") ? "12345" : "0000";
-      sheet.appendRow([u, pin, rol]);
+      sheet.appendRow([u, pin, "", rol]); // 4 columnas
       added = true;
     }
   });
 
-  // Forzar actualización de roles en la hoja por si ya estaban creados
+  // Forzar actualización de roles
   let changed = false;
   const newData = sheet.getDataRange().getValues();
   for (let i = 1; i < newData.length; i++) {
      let u = String(newData[i][0]).trim();
-     let currentRol = String(newData[i][2]).trim();
+     let currentRol = String(newData[i][3] || "").trim(); // Rol ahora es índice 3
      let desiredRol = currentRol;
      
      if (u === "Maria S." || u === "María S." || u === "Junior E." || u === "Dr. Aarón" || u === "Dr. Aaron") {
@@ -417,18 +428,18 @@ function getUsuarios() {
      }
      
      if (currentRol !== desiredRol) {
-         sheet.getRange(i + 1, 3).setValue(desiredRol);
+         sheet.getRange(i + 1, 4).setValue(desiredRol); // Actualizar en Columna 4 (D)
          changed = true;
      }
   }
   
   if (added || changed) {
     const finalData = sheet.getDataRange().getValues();
-    return finalData.slice(1).map(row => ({ nombre: String(row[0]).trim(), rol: String(row[2]).trim() })).filter(u => u.nombre !== "");
+    return finalData.slice(1).map(row => ({ nombre: String(row[0]).trim(), rol: String(row[3]).trim() })).filter(u => u.nombre !== "");
   }
   
   if (data.length <= 1) return [];
-  return data.slice(1).map(row => ({ nombre: String(row[0]).trim(), rol: String(row[2]).trim() })).filter(u => u.nombre !== "");
+  return data.slice(1).map(row => ({ nombre: String(row[0]).trim(), rol: String(row[3]).trim() })).filter(u => u.nombre !== "");
 }
 
 // ==========================================
@@ -663,16 +674,19 @@ function revisarAlertasYEnviarCorreo() {
   const today = new Date();
   today.setHours(0,0,0,0);
   
+  const productosGlobal = {}; // Para calcular el total del producto
+  
   for (const l in lotes) {
     const obj = lotes[l];
     if (obj.stock > 0) { // Solo evaluar si hay stock físico
       
-      // Revisar Stock Crítico (5 o menos unidades, ajústalo según necesites)
-      if (obj.stock <= 5) { 
-        alertasStockBajo.push(obj);
+      // Sumar al global del producto
+      if (!productosGlobal[obj.codigo]) {
+          productosGlobal[obj.codigo] = { nombre: obj.nombre, stockTotal: 0 };
       }
+      productosGlobal[obj.codigo].stockTotal += obj.stock;
       
-      // Revisar Vencimiento
+      // Revisar Vencimiento (esto SÍ es por lote individual)
       if (obj.fechaVenceStr) {
         const parts = obj.fechaVenceStr.split('/');
         if (parts.length === 3) {
@@ -687,6 +701,17 @@ function revisarAlertasYEnviarCorreo() {
         }
       }
     }
+  }
+  
+  // Evaluar stock crítico a nivel global (sumando todos sus lotes)
+  for (const cod in productosGlobal) {
+      if (productosGlobal[cod].stockTotal < 20) {
+          alertasStockBajo.push({
+              nombre: productosGlobal[cod].nombre,
+              loteCorto: "TODOS LOS LOTES",
+              stock: productosGlobal[cod].stockTotal
+          });
+      }
   }
   
   // 3. Preparar correo si hay alertas
@@ -730,7 +755,7 @@ function revisarAlertasYEnviarCorreo() {
   
   if (alertasStockBajo.length > 0) {
     htmlBody += `
-      <h3 style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 10px; color: #b45309; margin-top: 25px;">📦 Stock Crítico (5 unidades o menos)</h3>
+      <h3 style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 10px; color: #b45309; margin-top: 25px;">📦 Stock Crítico (Menos de 20 unidades)</h3>
       <table style="border-collapse: collapse; width: 100%; font-size: 13px;">
         <tr style="background-color: #f3f4f6; text-align: left;">
           <th style="padding: 10px; border: 1px solid #ddd;">Producto</th>
@@ -1034,4 +1059,78 @@ function guardarHistoricoData(datosAgrupados) {
   
   SpreadsheetApp.flush();
   return "Datos históricos guardados exitosamente (" + datosAgrupados.length + " productos consolidados).";
+}
+
+// ==========================================
+// MÓDULO IA: CONEXIÓN CON GROQ (Llama 3.3 70b)
+// ==========================================
+
+function guardarApiKeyConfig(apiKey) {
+  if (!apiKey || typeof apiKey !== 'string' || apiKey.trim() === '') {
+    throw new Error("API Key inválida.");
+  }
+  const props = PropertiesService.getScriptProperties();
+  props.setProperty("GROQ_API_KEY", apiKey.trim());
+  return { success: true };
+}
+
+function getApiKeyConfig() {
+  const props = PropertiesService.getScriptProperties();
+  const apiKey = props.getProperty("GROQ_API_KEY");
+  if (!apiKey) {
+    throw new Error("No se ha configurado la variable GROQ_API_KEY en las propiedades del script.");
+  }
+  return apiKey;
+}
+
+
+function analizarDatosConGroq(promptTexto) {
+  // Obtenemos la llave de las Propiedades del Script de Google
+  const props = PropertiesService.getScriptProperties();
+  const apiKey = props.getProperty("GROQ_API_KEY");
+  
+  if (!apiKey) {
+    throw new Error("No se ha configurado la variable GROQ_API_KEY en las propiedades del script.");
+  }
+  
+  const url = "https://api.groq.com/openai/v1/chat/completions";
+  
+  const payload = {
+    "model": "llama-3.3-70b-versatile",
+    "messages": [
+      {
+        "role": "system",
+        "content": "Eres un asistente experto en análisis de datos de Kardex e Inventarios hospitalarios. Responde de manera concisa y analítica."
+      },
+      {
+        "role": "user",
+        "content": promptTexto
+      }
+    ],
+    "temperature": 0.2
+  };
+  
+  const options = {
+    "method": "post",
+    "contentType": "application/json",
+    "headers": {
+      "Authorization": "Bearer " + apiKey
+    },
+    "payload": JSON.stringify(payload),
+    "muteHttpExceptions": true
+  };
+  
+  try {
+    const response = UrlFetchApp.fetch(url, options);
+    const code = response.getResponseCode();
+    const json = JSON.parse(response.getContentText());
+    
+    if (code === 200) {
+      return { success: true, text: json.choices[0].message.content };
+    } else {
+      return { success: false, error: json.error ? json.error.message : "Error HTTP " + code };
+    }
+  } catch (e) {
+    return { success: false, error: e.toString() };
+  }
 }
