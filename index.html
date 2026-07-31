@@ -11,7 +11,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <style>
+    #modal-custom-alert { z-index: 999999 !important; }
+  </style>
 <style>
 /* ── THEME SUPPORT ── */
 body.light-theme {
@@ -1127,6 +1130,7 @@ select.form-control option{
           <div class="table-header">
             <div class="table-title"><span class="table-title-icon">⚗️</span> KARDEX — MOVIMIENTOS</div>
             <div style="display:flex; gap:10px;">
+              <button class="btn-nuevo" onclick="abrirCierreMes()" style="background:rgba(168,85,247,0.15); color:var(--purple); border:1px solid rgba(168,85,247,0.4); font-size:0.75rem; padding:8px 15px; box-shadow:none; font-weight:bold;">🔄 Cierre Módulos</button>
               <button class="btn-nuevo" onclick="resetFilters()" style="background:rgba(59,130,246,0.15); color:var(--blue); border:1px solid rgba(59,130,246,0.4); font-size:0.75rem; padding:8px 15px; box-shadow:none;">🔄 Limpiar Filtros</button>
               <button class="btn-nuevo" onclick="exportKardexCSV()" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.4); font-size:0.75rem; padding:8px 15px; box-shadow:none;">📥 Exportar a Excel</button>
             </div>
@@ -6191,30 +6195,27 @@ window.filterUsuariosDropdown = function(tipo) {
      let nombreNorm = cleanName(u.nombre);
      if (addedNames.has(nombreNorm)) return;
      
-     const isAaron = nombreNorm.toLowerCase().includes('aarón') || nombreNorm.toLowerCase().includes('aaron');
-     const isChristian = nombreNorm.toLowerCase().includes('christian');
-     const isMaria = nombreNorm.toLowerCase().includes('maria');
-     const isJunior = nombreNorm.toLowerCase().includes('junior');
+     let rol = String(u.rol || 'Técnico de Laboratorio').trim();
+     let rolUpper = rol.toUpperCase();
      
-     // Determinar el rol original del usuario, o forzarlo
-     let originalRole = u.rol || 'Técnico de Laboratorio';
-     if (isChristian) originalRole = 'Administrador';
-     else if (isMaria || isJunior) originalRole = 'Personal de Almacén';
+     // Evaluar permisos reales basados en el ROL del perfil
+     let hasFullAccess = rolUpper.includes('ALMAC') || rolUpper.includes('ADMINISTRADOR') || rolUpper.includes('DOCTOR') || rolUpper.includes('DR.');
+     let isSoloMermas = rolUpper.includes('TÉCNICO') || rolUpper.includes('TECNICO') || rolUpper.includes('TEC.') || rolUpper.includes('FLEBOTOMISTA');
+     
+     if (!hasFullAccess && !isSoloMermas) {
+         isSoloMermas = true; // Por seguridad, si el rol es desconocido, solo ve mermas
+     }
      
      if (tipo === 'Descarte') {
-         if (isAaron) return; // Quitar a Aarón
+         // Regla específica: Ocultar a Dr. Aarón de mermas
+         if (nombreNorm.toLowerCase().includes('aarón') || nombreNorm.toLowerCase().includes('aaron')) return;
          
-         if (isChristian || isMaria || isJunior) {
-             options.push(`<option value="${nombreNorm}">${nombreNorm} (${originalRole})</option>`);
-         } else {
-             options.push(`<option value="${nombreNorm}">${nombreNorm} (Tec. de Laboratorio)</option>`);
-         }
+         options.push(`<option value="${nombreNorm}">${nombreNorm} (${rol})</option>`);
          addedNames.add(nombreNorm);
      } else {
-         // Entrada, Salida, Ajuste: SOLO Administrador, Personal de Almacén y Dr.
-         if (isChristian || isMaria || isJunior || isAaron) {
-             if (isAaron) options.push(`<option value="${nombreNorm}">${nombreNorm}</option>`);
-             else options.push(`<option value="${nombreNorm}">${nombreNorm} (${originalRole})</option>`);
+         // Entrada, Salida, Ajuste, Devolucion: SOLO Administrador, Personal de Almacén y Doctores
+         if (hasFullAccess) {
+             options.push(`<option value="${nombreNorm}">${nombreNorm} (${rol})</option>`);
              addedNames.add(nombreNorm);
          }
      }
@@ -7794,6 +7795,187 @@ window.addEventListener('load', function() {
     cargarUsuariosConfig();
   }, 1000);
 });
+</script>
+
+<!-- ================= MODAL Y LÓGICA DE CIERRE DE MES ================= -->
+<div class="modal-overlay" id="modal-cierre-mes" style="z-index: 9999;">
+  <div class="modal" style="border-top-color: var(--purple); max-width: 500px;">
+    <div class="modal-title">
+      <div class="modal-title-left">
+        <div class="modal-title-icon" style="color:var(--purple); background:rgba(139,92,246,0.12); border-color:var(--purple); box-shadow:0 0 20px rgba(139,92,246,0.3);">🔄</div>
+        <div>
+          <h3 style="color: var(--purple);">Cierre de Módulos</h3>
+          <p>Cuadre y reclasificación de mermas</p>
+        </div>
+      </div>
+      <button class="modal-close" type="button" onclick="document.getElementById('modal-cierre-mes').classList.remove('open')">&times;</button>
+    </div>
+    
+    <form id="form-cierre-mes" onsubmit="ejecutarCierreMes(event)">
+      <div style="background: rgba(168,85,247,0.1); padding: 10px; border-radius: 8px; margin-bottom: 20px; font-size: 0.85rem; color: #e2e8f0; border: 1px solid rgba(168,85,247,0.2);">
+        Selecciona el tubo e ingresa la suma de todo lo que recogiste físicamente de los módulos (Stock Operativo). El sistema regresará esa cantidad automáticamente a tu Stock Principal.
+      </div>
+
+      <div class="form-group" style="margin-bottom: 15px;">
+        <label>TUBO / PRODUCTO</label>
+        <input type="text" id="cierre-producto" class="form-control" list="datalist-nombres" placeholder="Ingrese o seleccione el nombre" required autocomplete="off" oninput="fillDatalist()" onclick="if(this.value==='') this.select();">
+      </div>
+      <div class="form-group" style="margin-bottom: 15px;">
+        <label>SUMA PRODUCTOS DEL STOCK EN USO + MÓDULOS <span class="req">*</span></label>
+        <input type="number" id="cierre-sobrantes" class="form-control" required min="1" placeholder="Ej. 100">
+      </div>
+      <div class="form-group" style="margin-bottom: 20px;">
+        <label>TU FIRMA (PIN) <span class="req">*</span></label>
+        <input type="password" id="cierre-pin" class="form-control" required maxlength="4" style="letter-spacing: 5px;">
+      </div>
+      
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
+        <button type="button" class="btn-nuevo" style="background:rgba(255,255,255,0.05); color:var(--muted2); box-shadow:none;" onclick="document.getElementById('modal-cierre-mes').classList.remove('open')">Cancelar</button>
+        <button type="button" class="btn-nuevo" id="btn-ejecutar-cierre" style="background:var(--purple); color:white;" onclick="ejecutarCierreMes(event)">Cerrar Mes Automáticamente</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+window.llenarCierreDatalist = function() {
+  const datalist = document.getElementById('cierre-datalist');
+  if (datalist && window.KARDEX_DATA) {
+    const nombresUnicos = new Set();
+    window.KARDEX_DATA.forEach(r => {
+      if (r && r.nombre && !String(r.observacion).includes('ANULADO')) nombresUnicos.add(String(r.nombre).trim());
+    });
+    const currentHtml = datalist.innerHTML;
+    const newHtml = Array.from(nombresUnicos).sort().map(nombre => `<option value="${nombre}"></option>`).join('');
+    if (currentHtml !== newHtml) datalist.innerHTML = newHtml;
+  }
+};
+
+window.abrirCierreMes = function() {
+  document.getElementById('form-cierre-mes').reset();
+  window.llenarCierreDatalist();
+  document.getElementById('modal-cierre-mes').classList.add('open');
+};
+
+window.ejecutarCierreMes = function(e) {
+  e.preventDefault();
+  const producto = document.getElementById('cierre-producto').value;
+  const sobrantes = parseInt(document.getElementById('cierre-sobrantes').value) || 0;
+  const pin = document.getElementById('cierre-pin').value;
+  
+  if(!pin || pin.length < 4) return showCustomAlert('Ingrese su PIN de 4 dígitos', 'Firma Inválida', true);
+  
+  const normalizeText = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
+  const prodObj = window.KARDEX_DATA.find(r => normalizeText(r.nombre) === normalizeText(producto));
+  if(!prodObj) return showCustomAlert('Producto no encontrado. Revisa que el nombre esté escrito exactamente igual.', 'Error', true);
+  
+  const btn = document.getElementById('btn-ejecutar-cierre');
+  btn.textContent = 'Procesando...';
+  btn.disabled = true;
+  
+  const now = new Date();
+  const _p = n => String(n).padStart(2,'0');
+  const fecha = `${now.getFullYear()}-${_p(now.getMonth()+1)}-${_p(now.getDate())}`;
+  const hora = now.toTimeString().split(' ')[0].substring(0,5);
+  
+  const baseObj = {
+    fecha: fecha, hora: hora, codigo: prodObj.codigo, nombre: prodObj.nombre,
+    tipo2: prodObj.tipo2 || 'MATERIAL DE LABORATORIO', 
+    comprobante: 'RETORNO-' + _p(now.getMonth()+1), usuario: 'AUTO', pin: pin, area: 'TOMA DE MUESTRA'
+  };
+
+  // --- LÓGICA DE DISTRIBUCIÓN AUTOMÁTICA DE LOTES (LIFO) ---
+  let lotesModulo = {};
+  window.KARDEX_DATA.forEach(r => {
+      if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
+      if (r.nombre !== producto) return;
+      
+      const esToma = String(r.area||'').toUpperCase().includes('TOMA DE MUESTRA');
+      if (!esToma) return;
+      
+      const tipo = String(r.tipo||'').trim().toLowerCase();
+      const l = r.lote || 'Lote: S/L | Marca: S/M';
+      
+      if (!lotesModulo[l]) lotesModulo[l] = { stock: 0, str: l };
+      
+      if (tipo === 'salida') {
+          lotesModulo[l].stock += Number(r.salida||0);
+      } else if (tipo === 'devolucion' || tipo === 'descarte') {
+          lotesModulo[l].stock -= (Number(r.entrada||0) || Number(r.salida||0));
+      }
+  });
+
+  let listLotes = Object.values(lotesModulo).filter(x => x.stock > 0);
+  
+  // Ordenar por fecha de vencimiento DESCENDENTE (El más nuevo primero)
+  listLotes.sort((a, b) => {
+      const getExp = (str) => {
+         const pVence = str.split('|').find(p => p.includes('Vence:'));
+         if(!pVence) return 0;
+         const dArr = pVence.replace('Vence:', '').trim().split('/');
+         if(dArr.length === 3) {
+             const yy = dArr[2].length === 2 ? '20'+dArr[2] : dArr[2];
+             return new Date(parseInt(yy), parseInt(dArr[1])-1, parseInt(dArr[0])).getTime();
+         }
+         return 0;
+      };
+      return getExp(b.str) - getExp(a.str);
+  });
+  
+  // Si por error matemático no hay stock teórico, usamos un genérico
+  if (listLotes.length === 0) {
+      listLotes.push({ stock: Infinity, str: 'Lote: RETORNO MÓDULO | Marca: S/M' });
+  }
+
+  let movimientos = [];
+  let faltan = sobrantes;
+  
+  for (let i = 0; i < listLotes.length; i++) {
+      if (faltan <= 0) break;
+      const lot = listLotes[i];
+      let cantDevolver = (faltan <= lot.stock) ? faltan : lot.stock;
+      
+      if (cantDevolver > 0) {
+          movimientos.push({ ...baseObj, tipo: 'Devolucion', cantidad: cantDevolver, entrada: cantDevolver, salida: '', observacion: 'RETORNO DE STOCK OPERATIVO (CIERRE DE MES)', lote: lot.str });
+          faltan -= cantDevolver;
+      }
+  }
+  
+  // Si aún sobran tubos (están devolviendo más de lo que alguna vez enviaron según el sistema)
+  if (faltan > 0) {
+      movimientos.push({ ...baseObj, tipo: 'Devolucion', cantidad: faltan, entrada: faltan, salida: '', observacion: 'RETORNO DE STOCK OPERATIVO (EXCEDENTE)', lote: listLotes[0].str });
+  }
+
+  function sendMov(mov) {
+      return new Promise((resolve, reject) => {
+          if (typeof google === 'undefined') { setTimeout(resolve, 500); return; }
+          google.script.run.withSuccessHandler(res => {
+              if(res && !res.success) reject(res.message); else resolve(res);
+          }).withFailureHandler(reject).registrarMovimiento(mov);
+      });
+  }
+  
+  async function procesar() {
+      try {
+          for (let m of movimientos) {
+              await sendMov(m);
+          }
+          
+          showCustomAlert('El Retorno de Mes se registró correctamente. Los tubos han vuelto a tu stock principal respetando los lotes originales.', 'Éxito Absoluto');
+          document.getElementById('modal-cierre-mes').classList.remove('open');
+          
+          if (typeof google !== 'undefined') {
+              google.script.run.withSuccessHandler(d => { window.KARDEX_DATA = d; if(window.renderTable) window.renderTable(); }).getKardexData();
+          }
+      } catch(err) {
+          showCustomAlert('Error guardando el retorno: ' + err, 'Error de Conexión', true);
+      } finally {
+          btn.textContent = 'Cerrar Mes Automáticamente';
+          btn.disabled = false;
+      }
+  }
+  procesar();
+};
 </script>
 </body>
 </html>
