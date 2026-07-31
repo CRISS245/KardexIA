@@ -1807,15 +1807,15 @@ select.form-control option{
             <option value="MATERIAL DE LIMPIEZA">3. MATERIAL DE LIMPIEZA</option>
           </select>
         </div>
-        <div class="form-group"><label>LOTE</label>
-          <input type="text" id="m-lote" class="form-control" list="dl-lotes" placeholder="Opcional p/ salidas rápidas" onfocus="this.dataset.old=this.value; this.value='';" onblur="if(!this.value) this.value=this.dataset.old || '';" autocomplete="off">
+        <div class="form-group"><label>LOTE <span class="req">*</span></label>
+          <input type="text" id="m-lote" class="form-control" list="dl-lotes" placeholder="Ej: Lote: 12345 | Marca: BD" onfocus="this.dataset.old=this.value; this.value='';" onblur="if(!this.value) this.value=this.dataset.old || '';" autocomplete="off" required>
           <datalist id="dl-lotes"></datalist>
         </div>
       </div>
 
       <div class="form-row">
         <div class="form-group"><label>N° COMPROBANTE/GUÍA</label><input type="text" id="m-comprobante" class="form-control" placeholder="Opcional"></div>
-        <div class="form-group"><label>VENCIMIENTO</label><input type="date" id="m-vencimiento" class="form-control"></div>
+        <div class="form-group"><label>VENCIMIENTO <span class="req">*</span></label><input type="date" id="m-vencimiento" class="form-control" required></div>
       </div>
 
       <div class="form-row">
@@ -3214,13 +3214,9 @@ function renderInventario(onlyMinimo) {
                       if (daysLeft <= 30) pTxt = "1° DESPACHAR YA (PRIORIDAD FEFO)";
                       else if (daysLeft <= 90) pTxt = "1° DESPACHAR PRONTO (FEFO)";
                       else pTxt = "1° DESPACHAR PRIMERO (FEFO)";
-                      // Si es el primero pero está seguro, pintamos de azul informativo
+                      // Si es el primero pero está seguro, mantenemos el color verde (acorde a la regla) y solo cambiamos el texto
                       if (daysLeft > 90) {
-                          col = "#3b82f6";
                           badgeTxt = "TURNO 1";
-                          bg = "rgba(59,130,246,0.08)"; border = "rgba(59,130,246,0.1)"; leftBorder = "#3b82f6";
-                          rowStyle = `background: ${bg}; border-bottom: 1px solid ${border};`;
-                          firstTdStyle = `border-left: 4px solid ${leftBorder};`;
                       }
                   }
               } else {
