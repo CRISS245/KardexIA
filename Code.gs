@@ -47,6 +47,21 @@ function getKardexData() {
 }
 
 // ==========================================
+// FUNCIÓN AUXILIAR: HASH SHA-256 PARA PIN
+// ==========================================
+function hashPin(pin) {
+  const rawHash = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, String(pin).trim());
+  let txtHash = '';
+  for (let i = 0; i < rawHash.length; i++) {
+    let hashVal = rawHash[i];
+    if (hashVal < 0) hashVal += 256;
+    if (hashVal.toString(16).length == 1) txtHash += '0';
+    txtHash += hashVal.toString(16);
+  }
+  return txtHash;
+}
+
+// ==========================================
 // REGISTRO SEGURO DE MOVIMIENTOS (CON SEMÁFORO)
 // ==========================================
 function registrarMovimiento(datos) {
@@ -61,18 +76,57 @@ function registrarMovimiento(datos) {
     if (!sheetUsers) throw new Error("La pestaña 'Usuarios' no existe.");
     const usersData = sheetUsers.getDataRange().getValues();
     let pinValido = false;
+    
+    // Auto-detección por PIN para Retiro Rápido (Acción Rápida)
+    if (datos.usuario === 'AUTO') {
+        const inputPin = String(datos.pin).trim();
+        const hashedInput = hashPin(inputPin);
+        let foundUser = false;
+        for (let i = 1; i < usersData.length; i++) {
+            const storedPin = String(usersData[i][1]).trim();
+            if (storedPin === inputPin || storedPin === hashedInput) {
+                datos.usuario = String(usersData[i][0]).trim(); // Asignar el nombre real
+                foundUser = true;
+                break;
+            }
+        }
+        if (!foundUser) throw new Error("Firma Inválida. No se encontró ningún usuario con ese PIN.");
+    }
+
     for (let i = 1; i < usersData.length; i++) {
-      if (String(usersData[i][0]).trim() === String(datos.usuario).trim()) {
-        // En Descarte el PIN se envía como 0000 por defecto. Si el PIN coincide, o si es un Descarte (bypass), es válido.
-        if (String(usersData[i][1]).trim() === String(datos.pin).trim() || datos.tipo === 'Descarte') {
-            pinValido = true;
+      if (String(usersData[i][0]).trim().toUpperCase() === String(datos.usuario).trim().toUpperCase()) {
+        let userRole = String(usersData[i][3]).trim();
+        const storedPin = String(usersData[i][1]).trim();
+        const inputPin = String(datos.pin).trim();
+        const hashedInput = hashPin(inputPin);
+        
+        let isMatch = false;
+        let needsMigration = false;
+        
+        if (storedPin === inputPin) {
+           isMatch = true;
+           needsMigration = true; // Era texto plano, hay que migrarlo a Hash
+        } else if (storedPin === hashedInput) {
+           isMatch = true;
+        }
+        
+        if (userRole === "Téc. de Laboratorio" || userRole === "Flebotomista") {
+           if (datos.tipo !== 'Descarte') {
+             throw new Error("Los Técnicos y Flebotomistas SOLO están autorizados para registrar Mermas (Fallas/Descartes).");
+           }
+           pinValido = true;
         } else {
-            throw new Error("La contraseña está mal escrita.");
+           if (isMatch || datos.tipo === 'Descarte') {
+               pinValido = true;
+               if (needsMigration && datos.tipo !== 'Descarte') {
+                   sheetUsers.getRange(i + 1, 2).setValue(hashedInput);
+               }
+           }
         }
         break;
       }
     }
-    if (!pinValido) throw new Error("Usuario no encontrado.");
+    if (!pinValido) throw new Error("Usuario o PIN incorrecto.");
 
     // 2. Abrir hoja inventario
     const sheet = ss.getSheetByName("Inventario");
@@ -263,8 +317,15 @@ function anularMovimiento(datos) {
     let pinValido = false;
     for (let i = 1; i < usersData.length; i++) {
       if (String(usersData[i][0]).trim() === String(datos.usuario).trim()) {
-        if (String(usersData[i][1]).trim() === String(datos.pin).trim()) {
-          pinValido = true;
+        const storedPin = String(usersData[i][1]).trim();
+        const inputPin = String(datos.pin).trim();
+        const hashedInput = hashPin(inputPin);
+        
+        if (storedPin === inputPin) {
+           pinValido = true;
+           sheetUsers.getRange(i + 1, 2).setValue(hashedInput); // Migración silenciosa
+        } else if (storedPin === hashedInput) {
+           pinValido = true;
         }
         break;
       }
@@ -310,11 +371,10 @@ function anularMovimiento(datos) {
     const targetLoteAnul = normL(rowOriginal[6]);
     let ultimoSaldo = 0;
     for (let i = 1; i < invData.length; i++) {
-      if (String(invData[i][11] || "").includes("[ANULADO]")) continue;
       if (normL(invData[i][3]) === targetCodAnul && normL(invData[i][6]) === targetLoteAnul) {
         const tipo = String(invData[i][2]).trim();
-        if (tipo === 'Entrada') ultimoSaldo += Number(invData[i][7]) || 0;
-        if (tipo === 'Salida' || tipo === 'Descarte') ultimoSaldo -= Number(invData[i][8]) || 0;
+        if (tipo === 'Entrada' || tipo === 'Prestamo') ultimoSaldo += Number(invData[i][7]) || 0;
+        if (tipo === 'Salida' || tipo === 'Descarte' || tipo === 'Devolucion') ultimoSaldo -= Number(invData[i][8]) || 0;
         if (tipo === 'Ajuste' || tipo === 'Ajuste (Anulación)') {
           ultimoSaldo += Number(invData[i][7]) || 0;
           ultimoSaldo -= Number(invData[i][8]) || 0;
@@ -405,8 +465,8 @@ function getUsuarios() {
       if (u === "Christian R.") rol = "Administrador";
       if (u === "Maria S." || u === "María S." || u === "Junior E." || u === "Dr. Aarón") rol = "Personal de Almacén";
       
-      const pin = (u === "Christian R.") ? "12345" : "0000";
-      sheet.appendRow([u, pin, "", rol]); // 4 columnas
+      const plainPin = (u === "Christian R.") ? "12345" : "0000";
+      sheet.appendRow([u, hashPin(plainPin), "", rol]); // Guarda el Hash SHA-256, no el texto plano
       added = true;
     }
   });
@@ -823,7 +883,7 @@ function getUsuariosConfig() {
     if (nombre !== "") {
       usuarios.push({
         nombre: nombre,
-        pin: String(data[i][1] || "").trim(),
+        pin: "", // No enviamos el hash de la BD al frontend
         correo: String(data[i][2] || "").trim(),
         rol: String(data[i][3] || "Personal de Almacén").trim()
       });
@@ -852,10 +912,11 @@ function agregarUsuarioConfig(nombre, pin, correo, rol) {
     }
   }
   
+  const hashedPin = hashPin(pin);
   if (firstEmptyRow > 0) {
-    sheet.getRange(firstEmptyRow, 1, 1, 4).setValues([[nombre, pin, correo, rol]]);
+    sheet.getRange(firstEmptyRow, 1, 1, 4).setValues([[nombre, hashedPin, correo, rol]]);
   } else {
-    sheet.appendRow([nombre, pin, correo, rol]);
+    sheet.appendRow([nombre, hashedPin, correo, rol]);
   }
   SpreadsheetApp.flush();
   return { success: true };
@@ -869,7 +930,8 @@ function editarUsuarioConfig(nombreAntiguo, nombreNuevo, pinNuevo, correoNuevo, 
   const data = sheet.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim().toUpperCase() === String(nombreAntiguo).trim().toUpperCase()) {
-      sheet.getRange(i + 1, 1, 1, 4).setValues([[nombreNuevo, pinNuevo, correoNuevo, rolNuevo]]);
+      let finalPin = pinNuevo ? hashPin(pinNuevo) : data[i][1];
+      sheet.getRange(i + 1, 1, 1, 4).setValues([[nombreNuevo, finalPin, correoNuevo, rolNuevo]]);
       SpreadsheetApp.flush();
       return { success: true };
     }
@@ -891,6 +953,32 @@ function eliminarUsuarioConfig(nombre) {
     }
   }
   throw new Error("Usuario no encontrado para eliminar.");
+}
+
+function cambiarPinUsuario(nombre, pinAntiguo, pinNuevo) {
+  if (!nombre || !pinAntiguo || !pinNuevo) throw new Error("Faltan datos obligatorios.");
+  
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("Usuarios");
+  if (!sheet) throw new Error("No existe la hoja de usuarios.");
+  
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim().toUpperCase() === String(nombre).trim().toUpperCase()) {
+      const storedPin = String(data[i][1] || "").trim();
+      const hashedAntiguo = hashPin(pinAntiguo);
+      
+      if (storedPin !== pinAntiguo && storedPin !== hashedAntiguo) {
+        throw new Error("El PIN actual ingresado es incorrecto.");
+      }
+      
+      const nuevoHashed = hashPin(pinNuevo);
+      sheet.getRange(i + 1, 2).setValue(nuevoHashed);
+      SpreadsheetApp.flush();
+      return { success: true };
+    }
+  }
+  throw new Error("Usuario no encontrado.");
 }
 
 // ==========================================
