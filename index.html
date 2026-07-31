@@ -962,6 +962,7 @@ select.form-control option{
       <div class="nav-div"></div>
       <span class="nav-label">Ajustes</span>
       <div class="menu-item" onclick="switchView('view-reportes')"><span class="ni">📊</span><span>Reportes</span></div>
+      <div class="menu-item" onclick="abrirModalCambiarMiPin()"><span class="ni">🔑</span><span>Cambiar Mi PIN</span></div>
       <div class="menu-item" onclick="switchView('view-configuracion')"><span class="ni">⚙️</span><span>Configuración</span></div>
     </div>
   </div>
@@ -1708,7 +1709,7 @@ select.form-control option{
       
       <div class="form-group">
         <label>USUARIO <span class="req">*</span></label>
-        <select id="c-usuario" class="form-control" required><option value="">Cargando...</option></select>
+        <select id="c-usuario" class="form-control" onchange="if(window.handleUsuarioChange) window.handleUsuarioChange('modal-contingencia')" required><option value="">Cargando...</option></select>
       </div>
 
       <div class="form-group">
@@ -1823,7 +1824,7 @@ select.form-control option{
       </div>
 
       <div class="form-row">
-        <div class="form-group"><label>USUARIO <span class="req">*</span></label><select id="m-usuario" class="form-control" required><option value="">Cargando...</option></select></div>
+        <div class="form-group"><label>USUARIO <span class="req">*</span></label><select id="m-usuario" class="form-control" onchange="if(window.handleUsuarioChange) window.handleUsuarioChange('modal-mov')" required><option value="">Cargando...</option></select></div>
         <div class="form-group">
           <label>ÁREA/DESTINO</label>
           <input type="text" id="m-area" class="form-control" value="TOMA DE MUESTRA" list="datalist-areas">
@@ -1940,6 +1941,49 @@ select.form-control option{
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-cambiar-pin">
+  <div class="modal" style="max-width:350px;">
+    <form id="form-cambiar-pin" onsubmit="event.preventDefault(); guardarNuevoPin();">
+      <div class="modal-title">
+        <div class="modal-title-left">
+          <div class="modal-title-icon" style="color:var(--cyan); border-color:rgba(2,132,199,0.25); background:rgba(2,132,199,0.1);">🔑</div>
+          <div>
+            <h3>Cambiar Mi PIN</h3>
+            <p>Actualizar contraseña personal</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close" onclick="document.getElementById('modal-cambiar-pin').classList.remove('open')">✕</button>
+      </div>
+      
+      <div class="form-group" style="text-align:left;">
+        <label>Mi Usuario</label>
+        <select id="cambio-usuario" class="form-control" required><option value="">Cargando...</option></select>
+      </div>
+      
+      <div class="form-group" style="text-align:left;">
+        <label>PIN Actual</label>
+        <div style="position:relative;">
+          <input type="text" id="cambio-pin-actual" class="form-control" placeholder="****" required style="-webkit-text-security: disc;" autocomplete="off" data-custompass="true">
+          <button type="button" onclick="togglePin('cambio-pin-actual', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--muted); cursor:pointer; font-size:1.2rem;">👁️</button>
+        </div>
+      </div>
+      
+      <div class="form-group" style="text-align:left;">
+        <label>Nuevo PIN (Mínimo 4 dígitos)</label>
+        <div style="position:relative;">
+          <input type="text" id="cambio-pin-nuevo" class="form-control" placeholder="****" required minlength="4" style="-webkit-text-security: disc;" autocomplete="off" data-custompass="true">
+          <button type="button" onclick="togglePin('cambio-pin-nuevo', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--muted); cursor:pointer; font-size:1.2rem;">👁️</button>
+        </div>
+      </div>
+      
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button type="button" class="btn-secondary" onclick="document.getElementById('modal-cambiar-pin').classList.remove('open')" style="margin-top:0;">Cancelar</button>
+        <button type="submit" class="btn-submit" style="margin-top:0; background:linear-gradient(135deg,var(--blue),#1d4ed8);">Actualizar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-preview-excel">
   <div class="modal premium-modal" style="max-width:90%; width:1000px; padding:20px; border-top:3px solid var(--blue);">
     <div class="modal-title" style="border-bottom:1px solid rgba(255,255,255,0.05); margin-bottom:15px; padding-bottom:15px;">
@@ -2048,9 +2092,9 @@ select.form-control option{
       <label class="form-label" style="display:block;font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Nombre Completo (Login)</label>
       <input type="text" id="usuario-nombre" class="form-control" placeholder="Ej. Juan Pérez" autocomplete="off" style="margin-bottom:15px;">
       
-      <label class="form-label" style="display:block;font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">PIN / Contraseña</label>
+      <label id="label-usuario-pin" class="form-label" style="display:block;font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">PIN / Contraseña</label>
       <div style="position:relative; margin-bottom:15px;">
-        <input type="password" id="usuario-pin" class="form-control" placeholder="4 dígitos mínimo" autocomplete="new-password">
+        <input type="text" id="usuario-pin" class="form-control" placeholder="4 dígitos mínimo" autocomplete="off" data-custompass="true" style="-webkit-text-security: disc;">
         <button type="button" onclick="togglePin('usuario-pin', this)" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--muted); cursor:pointer; font-size:1.2rem;">👁️</button>
       </div>
       
@@ -2060,6 +2104,8 @@ select.form-control option{
       <label class="form-label" style="display:block;font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Rol en el Sistema</label>
       <select id="usuario-rol" class="form-control">
         <option value="Personal de Almacén">Personal de Almacén</option>
+        <option value="Téc. de Laboratorio">Téc. de Laboratorio</option>
+        <option value="Flebotomista">Flebotomista</option>
         <option value="Administrador">Administrador</option>
       </select>
     </div>
@@ -2152,6 +2198,18 @@ window.showCustomConfirm = function(msg, callbackOk) {
 
 window.togglePin = function(id, btn) {
   const input = document.getElementById(id);
+  
+  if (input.dataset.custompass === 'true') {
+    if (input.style.webkitTextSecurity === 'disc') {
+      input.style.webkitTextSecurity = 'none';
+      btn.textContent = '🙈';
+    } else {
+      input.style.webkitTextSecurity = 'disc';
+      btn.textContent = '👁️';
+    }
+    return;
+  }
+
   if (input.type === 'password') {
     input.type = 'text';
     btn.textContent = '🙈';
@@ -2277,20 +2335,64 @@ window.setTipo = function(tipo, el) {
      if (inputNombre) {
        inputNombre.style.display = '';
        inputNombre.required = true;
+       inputNombre.value = ''; // Limpiar el nombre
      }
      if (selectNombre) {
        selectNombre.style.display = 'none';
        selectNombre.required = false;
      }
+     
+     // Limpiar todos los campos del producto
      if(lote) lote.value = '';
      if(cod) cod.value = '';
      if(mar) mar.value = '';
      if(ven) ven.value = '';
+     
+     const mCant = document.getElementById('m-cantidad');
+     if (mCant) mCant.value = ''; // Limpiar cantidad
+     
      if(area && tipo === 'Entrada') area.value = 'TOMA DE MUESTRA';
      if(window.renderOptions) window.renderOptions(); // Restaurar datalist completo
   }
 
   if (window.filterUsuariosDropdown) window.filterUsuariosDropdown(tipo);
+};
+
+window.handleUsuarioChange = function(modalId) {
+    const selectEl = (modalId === 'modal-contingencia') ? document.getElementById('c-usuario') : document.getElementById('m-usuario');
+    const userName = selectEl.value;
+    
+    let userObj = null;
+    if (window.usuariosConfig && window.usuariosConfig.length > 0) {
+        userObj = window.usuariosConfig.find(u => u.nombre === userName);
+    } else if (window.ALL_USERS && window.ALL_USERS.length > 0) {
+        userObj = window.ALL_USERS.find(u => u.nombre === userName);
+    }
+    
+    if (modalId === 'modal-contingencia') {
+        if (userObj && (userObj.rol === "Téc. de Laboratorio" || userObj.rol === "Flebotomista")) {
+            showCustomAlert("Tu perfil no tiene permisos para utilizar el Mini-Almacén de Contingencia. Regresando a configuración por defecto...", "Restringido", true);
+            selectEl.value = "";
+        }
+    } else {
+        const pills = document.querySelectorAll('.pill-group .pill');
+        if (userObj && (userObj.rol === "Téc. de Laboratorio" || userObj.rol === "Flebotomista")) {
+            // Only allow Falla/Merma (Descarte)
+            window.setTipo('Descarte', pills[2]); // Force Descarte
+            pills.forEach(p => {
+                if (!p.textContent.includes('Falla/Merma')) {
+                    p.style.opacity = '0.3';
+                    p.style.pointerEvents = 'none';
+                }
+            });
+            showCustomAlert("Por tu perfil, la función se ha limitado únicamente al registro de MERMAS / DESCARTES.", "Aviso de Seguridad", false);
+        } else {
+            pills.forEach(p => {
+                p.style.opacity = '1';
+                p.style.pointerEvents = 'auto';
+            });
+        }
+    }
 };
 
 const pCanvas = document.getElementById('particles-canvas');
@@ -2756,6 +2858,8 @@ window.quickCheckout = function(codigo) {
   document.getElementById('m-pin').value = '';
   document.getElementById('pin-qty').value = 1;
   document.getElementById('pin-qty-wrapper').style.display = 'block';
+  
+  window.isQuickCheckout = true; // Flag for auto user detection
   document.getElementById('modal-pin').classList.add('open');
   } catch (e) {
     console.error("quickCheckout Error:", e);
@@ -5332,11 +5436,6 @@ function renderTable() {
       });
     
     sortedForBalance.forEach(({ r }) => {
-      if (r.observacion && String(r.observacion).includes('[ANULADO]')) {
-        r.saldo_calculado = r.saldo_calculado || 0;
-        r.saldo_prod = r.saldo_prod || 0;
-        return;
-      }
       const keyLote = `${r.codigo || 'SIN_COD'}||${normL(r.lote)}`;
       const keyProd = `${r.codigo || 'SIN_COD'}`;
       if (!balances[keyLote]) balances[keyLote] = 0;
@@ -5344,7 +5443,7 @@ function renderTable() {
       
       if (r.tipo === 'Entrada' || r.tipo === 'Prestamo') { balances[keyLote] += Number(r.entrada || 0); balancesProd[keyProd] += Number(r.entrada || 0); }
       if (r.tipo === 'Salida' || r.tipo === 'Descarte' || r.tipo === 'Devolucion') { balances[keyLote] -= Number(r.salida || 0); balancesProd[keyProd] -= Number(r.salida || 0); }
-      if (r.tipo === 'Ajuste') {
+      if (r.tipo === 'Ajuste' || r.tipo === 'Ajuste (Anulación)') {
         balances[keyLote] += Number(r.entrada || 0); balances[keyLote] -= Number(r.salida || 0);
         balancesProd[keyProd] += Number(r.entrada || 0); balancesProd[keyProd] -= Number(r.salida || 0);
       }
@@ -6187,7 +6286,15 @@ if(typeof google !== 'undefined') {
 window.openModal = function(tipo = 'Entrada') {
   document.getElementById('modal-mov').classList.add('open');
   document.getElementById('form-mov').reset();
+  
+  // Limpieza explícita forzada para evitar que queden "pegados" valores de Acción Rápida
+  ['m-nombre', 'm-codigo', 'm-lote', 'm-marca', 'm-vencimiento', 'm-comprobante', 'm-observacion'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+  });
+  
   const mCant = document.getElementById('m-cantidad');
+  mCant.value = '';
   mCant.removeAttribute('max');
   mCant.placeholder = '0.00';
   window.loteSeleccionadoFefo = null;
@@ -6270,6 +6377,20 @@ window.updateDestinoAutomatico = function() {
 
 window.guardarMovimientoContingencia = function(e) {
   e.preventDefault();
+  
+  const usuarioName = document.getElementById('c-usuario').value;
+  let userObj = null;
+  if (window.usuariosConfig && window.usuariosConfig.length > 0) {
+      userObj = window.usuariosConfig.find(u => u.nombre === usuarioName);
+  } else if (window.ALL_USERS && window.ALL_USERS.length > 0) {
+      userObj = window.ALL_USERS.find(u => u.nombre === usuarioName);
+  }
+  
+  if (userObj && (userObj.rol === "Téc. de Laboratorio" || userObj.rol === "Flebotomista")) {
+    showCustomAlert("Tu perfil solo tiene autorización para registrar Mermas. No puedes registrar movimientos de Contingencia.", "Acceso Denegado", true);
+    return;
+  }
+  
   document.getElementById('m-pin').value = '';
   document.getElementById('pin-qty').value = document.getElementById('c-cantidad').value;
   document.getElementById('pin-qty-wrapper').style.display = 'none';
@@ -6278,7 +6399,7 @@ window.guardarMovimientoContingencia = function(e) {
 
 window.confirmarGuardadoContingencia = function(force = false, bypassPin = false) {
   const pin = bypassPin ? '0000' : document.getElementById('m-pin').value;
-  if(!bypassPin && !pin) return showCustomAlert('Debe ingresar su PIN secreto de 4 dígitos.', 'Firma Inválida', true);
+  if(!bypassPin && (!pin || pin.length < 4)) return showCustomAlert('Debe ingresar su PIN secreto de mínimo 4 caracteres.', 'Firma Inválida', true);
   
   const btnFirmar = document.getElementById('btn-firmar');
   if (btnFirmar) {
@@ -6351,8 +6472,24 @@ window.confirmarGuardadoContingencia = function(force = false, bypassPin = false
 window.guardarMovimiento = function(e) {
   e.preventDefault();
   
-  const vencimiento = document.getElementById('m-vencimiento').value;
+  const usuarioSelect = document.getElementById('m-usuario');
+  const usuarioName = usuarioSelect.value;
+  let userObj = null;
+  if (window.usuariosConfig && window.usuariosConfig.length > 0) {
+      userObj = window.usuariosConfig.find(u => u.nombre === usuarioName);
+  } else if (window.ALL_USERS && window.ALL_USERS.length > 0) {
+      userObj = window.ALL_USERS.find(u => u.nombre === usuarioName);
+  }
   const tipoM = document.getElementById('m-tipo').value;
+  
+  if (userObj && (userObj.rol === "Téc. de Laboratorio" || userObj.rol === "Flebotomista")) {
+    if (tipoM !== "Descarte") {
+      showCustomAlert("Tu perfil solo tiene autorización para registrar Mermas (Fallas/Descartes).", "Acceso Denegado", true);
+      return;
+    }
+  }
+  
+  const vencimiento = document.getElementById('m-vencimiento').value;
   if (vencimiento) {
     const vDate = vencimiento.split('-');
     const yearStr = vDate[0];
@@ -6410,6 +6547,8 @@ window.guardarMovimiento = function(e) {
     document.getElementById('m-pin').value = '';
     document.getElementById('pin-qty').value = document.getElementById('m-cantidad').value;
     document.getElementById('pin-qty-wrapper').style.display = 'none';
+    
+    window.isQuickCheckout = false; // Normal mode
     document.getElementById('modal-pin').classList.add('open');
   }
 };
@@ -6424,7 +6563,7 @@ window.confirmarGuardado = function(force = false, bypassPin = false) {
   }
 
   const pin = bypassPin ? '0000' : document.getElementById('m-pin').value;
-  if(!bypassPin && !pin) return showCustomAlert('Debe ingresar su PIN secreto de 4 dígitos.', 'Firma Inválida', true);
+  if(!bypassPin && (!pin || pin.length < 4)) return showCustomAlert('Debe ingresar su PIN secreto de mínimo 4 caracteres.', 'Firma Inválida', true);
   
   // Check for expired lot on Salida
   const tipoM = document.getElementById('m-tipo').value;
@@ -6551,7 +6690,7 @@ window.confirmarGuardado = function(force = false, bypassPin = false) {
     cantidad: cantidadRaw,
     entrada: (tipoVal === 'Entrada' || tipoVal === 'Prestamo') ? cantidadRaw : '',
     salida: (tipoVal === 'Salida' || tipoVal === 'Devolucion' || tipoVal === 'Descarte') ? cantidadRaw : '',
-    usuario: document.getElementById('m-usuario').value,
+    usuario: window.isQuickCheckout ? 'AUTO' : document.getElementById('m-usuario').value,
     pin: pin,
     area: areaVal,
     observacion: obsFinal
@@ -6700,10 +6839,22 @@ window.cancelarAnular = function() {
 window.confirmarAnulacion = function() {
   try {
     const usuario = document.getElementById('anular-usuario').value;
+    let userObj = null;
+    if (window.usuariosConfig && window.usuariosConfig.length > 0) {
+        userObj = window.usuariosConfig.find(u => u.nombre === usuario);
+    } else if (window.ALL_USERS && window.ALL_USERS.length > 0) {
+        userObj = window.ALL_USERS.find(u => u.nombre === usuario);
+    }
+    if (userObj && (userObj.rol === "Téc. de Laboratorio" || userObj.rol === "Flebotomista")) {
+      showCustomAlert("Tu perfil no tiene permisos para anular movimientos.", "Acceso Denegado", true);
+      return;
+    }
+    
     const motivo = document.getElementById('anular-motivo').value.trim();
     const pin = document.getElementById('anular-pin').value;
     
     if(!usuario || !motivo || !pin) return showCustomAlert('Por favor, complete el usuario, motivo y PIN de seguridad.', 'Datos Incompletos', true);
+    if(pin.length < 4) return showCustomAlert('Debe ingresar un PIN secreto de mínimo 4 caracteres.', 'Firma Inválida', true);
     
     const formBtn = document.querySelector('#form-anular button[type="submit"]');
     if (formBtn) {
@@ -7192,6 +7343,8 @@ window.toggleDashboardAlerts = function() {
 // Forzar mayúsculas en todos los inputs de texto
 document.addEventListener('input', function(e) {
   if (e.target && e.target.tagName === 'INPUT' && (e.target.type === 'text' || e.target.type === 'search')) {
+    // Ignorar inputs de contraseñas que están en modo texto (ojo abierto)
+    if (e.target.id && (e.target.id.includes('pin') || e.target.id.includes('pass'))) return;
     const start = e.target.selectionStart;
     const end = e.target.selectionEnd;
     e.target.value = e.target.value.toUpperCase();
@@ -7293,9 +7446,12 @@ window.renderUsuarios = function() {
 
 window.abrirModalUsuario = function() {
   document.getElementById('modal-usuario-title').innerText = "Crear Nuevo Perfil";
+  document.getElementById('label-usuario-pin').innerText = "PIN / CONTRASEÑA";
   document.getElementById('usuario-nombre-original').value = "";
   document.getElementById('usuario-nombre').value = "";
   document.getElementById('usuario-pin').value = "";
+  document.getElementById('usuario-pin').style.webkitTextSecurity = 'disc';
+  document.getElementById('usuario-pin').placeholder = "Ej: 1234 (Mín. 4 dígitos)";
   document.getElementById('usuario-correo').value = "";
   document.getElementById('usuario-rol').value = "Personal de Almacén";
   document.getElementById('modal-usuario').classList.add('open');
@@ -7305,9 +7461,12 @@ window.editarUsuarioConfigUI = function(nombre) {
   const u = usuariosConfig.find(x => x.nombre === nombre);
   if(!u) return;
   document.getElementById('modal-usuario-title').innerText = "Editar Perfil";
+  document.getElementById('label-usuario-pin').innerText = "RESETEAR PIN (Escriba clave nueva o deje en blanco)";
   document.getElementById('usuario-nombre-original').value = u.nombre;
   document.getElementById('usuario-nombre').value = u.nombre;
-  document.getElementById('usuario-pin').value = u.pin;
+  document.getElementById('usuario-pin').value = "";
+  document.getElementById('usuario-pin').style.webkitTextSecurity = 'disc';
+  document.getElementById('usuario-pin').placeholder = "Dejar vacío para NO cambiar";
   document.getElementById('usuario-correo').value = u.correo;
   document.getElementById('usuario-rol').value = u.rol || "Personal de Almacén";
   document.getElementById('modal-usuario').classList.add('open');
@@ -7320,7 +7479,9 @@ window.guardarUsuarioConfig = function() {
   const correo = document.getElementById('usuario-correo').value.trim();
   const rol = document.getElementById('usuario-rol').value;
   
-  if(!nombre || !pin) { showCustomAlert("Nombre y PIN son obligatorios", "Error"); return; }
+  if(!nombre) { showCustomAlert("El nombre es obligatorio", "Error"); return; }
+  if(!original && !pin) { showCustomAlert("El PIN es obligatorio para usuarios nuevos", "Error"); return; }
+  if(pin && pin.length < 4) { showCustomAlert("El PIN debe tener al menos 4 caracteres", "Error"); return; }
   
   document.getElementById('modal-usuario').classList.remove('open');
   showCustomAlert("Guardando...", "Información");
@@ -7343,6 +7504,51 @@ window.guardarUsuarioConfig = function() {
     }
   } else {
     showCustomAlert("Guardado simulado (modo local)", "Éxito");
+  }
+};
+
+window.abrirModalCambiarMiPin = function() {
+  document.getElementById('cambio-pin-actual').value = "";
+  document.getElementById('cambio-pin-nuevo').value = "";
+  
+  const select = document.getElementById('cambio-usuario');
+  select.innerHTML = '<option value="" disabled selected>Seleccione su usuario...</option>';
+  
+  if (window.usuariosConfig && window.usuariosConfig.length > 0) {
+    window.usuariosConfig.forEach(u => {
+      select.innerHTML += `<option value="${u.nombre}">${u.nombre}</option>`;
+    });
+  } else if (typeof google !== 'undefined' && google.script) {
+    google.script.run.withSuccessHandler(function(res) {
+      window.usuariosConfig = res;
+      select.innerHTML = '<option value="" disabled selected>Seleccione su usuario...</option>' + res.map(u => `<option value="${u.nombre}">${u.nombre}</option>`).join('');
+    }).getUsuariosConfig();
+  }
+  
+  document.getElementById('modal-cambiar-pin').classList.add('open');
+};
+
+window.guardarNuevoPin = function() {
+  const nombre = document.getElementById('cambio-usuario').value;
+  const pinActual = document.getElementById('cambio-pin-actual').value.trim();
+  const pinNuevo = document.getElementById('cambio-pin-nuevo').value.trim();
+  
+  if (!nombre) return showCustomAlert("Seleccione su usuario", "Error");
+  if (!pinActual || !pinNuevo) return showCustomAlert("Debe ingresar ambos PINs", "Error");
+  if (pinNuevo.length < 4) return showCustomAlert("El nuevo PIN debe tener al menos 4 caracteres", "Error");
+  
+  document.getElementById('modal-cambiar-pin').classList.remove('open');
+  showCustomAlert("Verificando y actualizando...", "Información");
+  
+  if (typeof google !== 'undefined' && google.script) {
+    google.script.run.withSuccessHandler(function(res) {
+      showCustomAlert("¡Tu PIN ha sido actualizado exitosamente!", "Éxito");
+      if(typeof cargarUsuariosConfig === 'function') cargarUsuariosConfig();
+    }).withFailureHandler(function(err) {
+      showCustomAlert("Error: " + err.message, "Error");
+    }).cambiarPinUsuario(nombre, pinActual, pinNuevo);
+  } else {
+    showCustomAlert("Cambio simulado localmente", "Éxito");
   }
 };
 
