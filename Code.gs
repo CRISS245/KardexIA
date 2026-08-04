@@ -5,11 +5,18 @@ function doGet() {
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
+
 // ==========================================
 // OBTENER DATOS DEL KARDEX
 // ==========================================
 function getKardexData() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Inventario");
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) return [];
+  let sheet = ss.getSheetByName("Inventario");
+  if (!sheet || sheet.getLastRow() <= 1) {
+    poblarGoogleSheetsOficialDirecto();
+    sheet = ss.getSheetByName("Inventario");
+  }
   if (!sheet) return [];
   
   const data = sheet.getDataRange().getValues();
@@ -44,6 +51,141 @@ function getKardexData() {
   });
   
   return formattedData.reverse();
+}
+
+// ==========================================
+// POBLAR GOOGLE SHEETS CON CATÁLOGO OFICIAL DIRECTAMENTE DESDE EL SERVIDOR
+// ==========================================
+function poblarGoogleSheetsOficialDirecto() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) return { success: false, error: "No hay hoja de cálculo activa." };
+  let sheet = ss.getSheetByName("Inventario");
+  if (!sheet) {
+    sheet = ss.insertSheet("Inventario");
+  }
+
+  // 1. Limpiar completamente contenido anterior
+  sheet.clearContents();
+
+  // 2. Colocar Encabezados
+  const headers = ["Fecha", "Hora", "Tipo", "Código", "Nombre", "Tipo2", "Lote", "Entrada", "Salida", "Saldo", "Usuario", "Observación", "Área", "Comprobante", "Transcrito", "MovId"];
+  sheet.appendRow(headers);
+
+  const now = new Date();
+  const fecha = Utilities.formatDate(now, Session.getScriptTimeZone(), "dd/MM/yyyy");
+  const hora = Utilities.formatDate(now, Session.getScriptTimeZone(), "hh:mm:ss a");
+
+  // Lista Oficial Completa de Productos del Hospital (Stock = 0, Códigos oficiales para Escritorio)
+  const productosOficiales = [
+    // --- MATERIAL DE ESCRITORIO (28 CÓDIGOS OFICIALES DE 12 DÍGITOS) ---
+    { nombre: "BOLIGRAFO - AZUL", codigo: "716000010208", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "BOLIGRAFO - ROJO", codigo: "716000010187", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "BOLIGRAFO - NEGRO", codigo: "716000010209", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "PAPEL BOND 80G", codigo: "717200050224", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "LIBRO ACTAS -DE 200H.", codigo: "717200140150", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "LIBRO ACTAS -DE 400H.", codigo: "717200140151", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "CLIP DE METAL", codigo: "718500050032", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "GRAPA 26 X 6", codigo: "718500080026", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "ACOFASTER", codigo: "718500100017", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "LIGA DE JEBE", codigo: "718500110025", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "CINTA - CHICA", codigo: "710300010048", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "CINTA - AMBALAJE", codigo: "710300010026", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "GOMA BARRA", codigo: "710300060058", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "ARCHIVADORES PALANCA", codigo: "710600010076", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "CORRECTOR", codigo: "711100030001", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "ENGRAPADOR DE METAL", codigo: "715000110033", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "REGLA PLASTICA", codigo: "715000190001", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "ESPONJERO", codigo: "715000240003", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "LAPIZ NEGRO", codigo: "716000040045", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "PLUMON -GRUESO-NEGRO IND.", codigo: "716000060375", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "PLUMON -ACR.GRUESO-ROJO", codigo: "716000060405", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "PLUMON -ACR.GRUESO-AZUL", codigo: "716000060421", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "PLUMON -ACR.GRUESO-NEGRO", codigo: "716000060423", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "PLUMON -ACR.GRUESO-VERDE", codigo: "716000060424", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "TAMPON-CUBIERTA-ROJO", codigo: "716000090046", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "TAMPON-CUBIERTA-AZUL", codigo: "716000090048", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "TINTA PARA TAMPON-ROJO", codigo: "716000160015", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+    { nombre: "RESALTADOR", codigo: "716000060482", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
+
+    // --- MATERIAL DE LABORATORIO Y TUBOS DE FLEBOTOMÍA (SIN CÓDIGO, STOCK = 0) ---
+    { nombre: "TUBO DE PLASTICO CON EDTA X 2ML", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TUBO DE PLASTICO CON EDTA X 4ML", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TUBO VACUTAINER CON EDTA K2 4ML", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TUBO VACUTAINER CON EDTA K3 3ML", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TUBO VACUTAINER TAPA ROJA (ACTIVADOR DE COÁGULO)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TUBO VACUTAINER TAPA AMARILLA (GEL SEPARADOR)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TUBO VACUTAINER TAPA CELESTE (CITRATO DE SODIO 3.2%)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TUBO VACUTAINER TAPA VERDE (HEPARINA DE SODIO)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TUBO VACUTAINER TAPA GRIS (FLUORURO DE SODIO)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TUBO DE VIDRIO BIOQUÍMICA", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TUBO DE VIDRIO INMUNOLOGÍA", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TUBO MICROTAINER CON EDTA X 0.5ML", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "AGUJAS DESCARTABLES 20 X 1", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "AGUJAS VACUTAINER 21 X 1/2", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "ALITAS VACUTAINER SAFETY-LOK 23 X 3/4", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "GASA FRACCIONADA ESTERIL 5X5 cm", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "ALGODÓN x 500 GR", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "ESPARADRAPO", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "BOLSAS COLECTORA PARA ORINA 50 ML", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "ALCOHOL ETILICO 70%", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "CATETER INTRAVENOSO 22G", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "CATETER INTRAVENOSO 24G", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "JERINGA 3 ML CON AGUJA", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "JERINGA 5 ML CON AGUJA", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "JERINGA 10 ML CON AGUJA", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "JERINGA 20 ML", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "GUANTES EXAMEN DE NITRILO TALLA L", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "GUANTES EXAMEN DE NITRILO TALLA M", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "GUANTES EXAMEN DE NITRILO TALLA S", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "MASCARILLA QUIRÚRGICA 3 PLIEGUES", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "MASCARILLA N95 / KN95", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "MANDILÓN DESCARTABLE ESTÉRIL", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "GORRO ORTOPÉDICO DESCARTABLE", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "CUBRECALZADO DESCARTABLE", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "BOQUILLAS PARA ESPIRÓMETRO", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "PUNTERAS PARA PIPETA AZUL (1000 UL)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "PUNTERAS PARA PIPETA AMARILLA (200 UL)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "PUNTERAS PARA PIPETA BLANCA (10 UL)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "LÁMINAS PORTAOBJETOS 26X76 MM", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "LAMINILLAS CUBREOBJETOS 22X22 MM", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TIRA REACTIVA PARA UROANÁLISIS", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "REACTIVO PARA BIOQUÍMICA GLUCOSA", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "REACTIVO PARA BIOQUÍMICA UREA", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "REACTIVO PARA BIOQUÍMICA CREATININA", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+
+    // --- MATERIAL DE LIMPIEZA (SIN CÓDIGO, STOCK = 0) ---
+    { nombre: "JABÓN LÍQUIDO GERMICIDA", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
+    { nombre: "ALCOHOL EN GEL 70% CON DOSIFICADOR", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
+    { nombre: "LEJÍA / HIPOCLORITO DE SODIO 5%", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
+    { nombre: "DETERGENTE EN POLVO MULTIUSO", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
+    { nombre: "DETERGENTE ENZIMÁTICO PARA INSTRUMENTAL", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
+    { nombre: "PAPEL HIGIÉNICO ROLLO INSTITUCIONAL", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
+    { nombre: "PAPEL TOALLA INTERFOLIADO", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
+    { nombre: "BOLSA DE BASURA ROJA (BIOCONTAMINADO)", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
+    { nombre: "BOLSA DE BASURA NEGRA (RESIDUOS COMUNES)", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
+    { nombre: "BOLSA DE BASURA AMARILLA (ESPECIALES)", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
+    { nombre: "PAÑO DE MICROFIBRA MULTIUSO", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
+    { nombre: "ESPONJA DE LIMPIEZA SINTÉTICA", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
+    { nombre: "GUANTES DE JEBE MULTIUSO TALLA L", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
+    { nombre: "GUANTES DE JEBE MULTIUSO TALLA M", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
+    { nombre: "DESINFECTANTE DE SUPERFICIES AMONIO CUATERNARIO", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 }
+  ];
+
+  let rowsToAppend = [];
+  productosOficiales.forEach(p => {
+    rowsToAppend.push([
+      fecha, hora, "Entrada", p.codigo || "", p.nombre, p.tipo2,
+      "Lote: INICIAL | Marca: S/M", 0, "", 0, "SISTEMA",
+      "CATÁLOGO OFICIAL INICIAL", "ALMACÉN CENTRAL", "INICIAL", "SI", Utilities.getUuid()
+    ]);
+  });
+
+  sheet.getRange(2, 1, rowsToAppend.length, rowsToAppend[0].length).setValues(rowsToAppend);
+  
+  // Aplicar formato visual elegante
+  darFormatoEleganteAGoogleSheets();
+  SpreadsheetApp.flush();
+  return { success: true, count: productosOficiales.length };
 }
 
 // ==========================================
@@ -138,21 +280,29 @@ function registrarMovimiento(datos) {
     let ultimoSaldoGlobal = 0;
     
     const normalize = (str) => String(str || "").toLowerCase().replace(/[^a-z0-9]/g, '');
+    
+    // Función para obtener la clave única real.
+    // Si el código es "S/C", vacío, letras, o tiene menos de 8 dígitos, se agrupa obligatoriamente por nombre.
+    const getProductKey = (codigo, nombre) => {
+        const rawCod = String(codigo || "").trim();
+        const nCod = normalize(rawCod);
+        if (!nCod || nCod === 'sc' || nCod === 'na' || nCod === 'sincodigo' || nCod === 'sl' || rawCod.length < 8 || !/^\d+$/.test(rawCod)) {
+            return normalize(nombre);
+        }
+        return nCod;
+    };
+    
     // Para el lote usamos SOLO la primera parte (antes del |) para no fallar por diferencias en Marca/Vence
-    const extractLoteNum = (str) => normalize(String(str || "").split("|")[0]);
+    const extractLoteNum = (str) => normalize(String(str || "").split("|")[0]).replace(/^lote/, '');
     
-    let targetKey = normalize(datos.codigo);
-    if (!targetKey) targetKey = normalize(datos.nombre);
-    
+    const targetKey = getProductKey(datos.codigo, datos.nombre);
     const targetLote = extractLoteNum(datos.lote);
 
     for (let i = 1; i < data.length; i++) {
       // Ignorar anulados
       if (String(data[i][11] || "").includes("[ANULADO]")) continue;
       
-      let rowKey = normalize(data[i][3]);
-      if (!rowKey) rowKey = normalize(data[i][4]);
-      
+      const rowKey = getProductKey(data[i][3], data[i][4]);
       const rowLote = extractLoteNum(data[i][6]);
       
       if (rowKey === targetKey) {
@@ -1222,3 +1372,184 @@ function analizarDatosConGroq(promptTexto) {
     return { success: false, error: e.toString() };
   }
 }
+
+// ==========================================
+// CARGAR PRODUCTOS OFICIALES EN GOOGLE SHEETS
+// ==========================================
+function inicializarProductosOficialesEnSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName("Inventario");
+  if (!sheet) {
+    sheet = ss.insertSheet("Inventario");
+    sheet.appendRow(["Fecha", "Hora", "Tipo", "Código", "Nombre", "Tipo2", "Lote", "Entrada", "Salida", "Saldo", "Usuario", "Observación", "Área", "Comprobante", "Transcrito", "MovId"]);
+  }
+  
+  const productosOficiales = [
+    { nombre: "BOLIGRAFO - AZUL", codigo: "716000010208", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "BOLIGRAFO - ROJO", codigo: "716000010187", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "BOLIGRAFO - NEGRO", codigo: "716000010209", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "PAPEL BOND 80G", codigo: "717200050224", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "LIBRO ACTAS -DE 200H.", codigo: "717200140150", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "LIBRO ACTAS -DE 400H.", codigo: "717200140151", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "CLIP DE METAL", codigo: "718500050032", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "GRAPA 26 X 6", codigo: "718500080026", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "ACOFASTER", codigo: "718500100017", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "LIGA DE JEBE", codigo: "718500110025", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "CINTA - CHICA", codigo: "710300010048", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "CINTA - AMBALAJE", codigo: "710300010026", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "GOMA BARRA", codigo: "710300060058", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "ARCHIVADORES PALANCA", codigo: "710600010076", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "CORRECTOR", codigo: "711100030001", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "ENGRAPADOR DE METAL", codigo: "715000110033", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "REGLA PLASTICA", codigo: "715000190001", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "ESPONJERO", codigo: "715000240003", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "LAPIZ NEGRO", codigo: "716000040045", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "PLUMON -GRUESO-NEGRO IND.", codigo: "716000060375", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "PLUMON -ACR.GRUESO-ROJO", codigo: "716000060405", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "PLUMON -ACR.GRUESO-AZUL", codigo: "716000060421", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "PLUMON -ACR.GRUESO-NEGRO", codigo: "716000060423", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "PLUMON -ACR.GRUESO-VERDE", codigo: "716000060424", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "TAMPON-CUBIERTA-ROJO", codigo: "716000090046", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "TAMPON-CUBIERTA-AZUL", codigo: "716000090048", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "TINTA PARA TAMPON-ROJO", codigo: "716000160015", tipo2: "MATERIAL DE ESCRITORIO" },
+    { nombre: "RESALTADOR", codigo: "716000060482", tipo2: "MATERIAL DE ESCRITORIO" }
+  ];
+
+  const data = sheet.getDataRange().getValues();
+  const nombresExistentes = new Set(data.slice(1).map(r => String(r[4] || "").trim().toUpperCase()));
+  
+  const now = new Date();
+  const fecha = Utilities.formatDate(now, Session.getScriptTimeZone(), "dd/MM/yyyy");
+  const hora = Utilities.formatDate(now, Session.getScriptTimeZone(), "hh:mm:ss a");
+  
+  let insertados = 0;
+  productosOficiales.forEach(p => {
+    if (!nombresExistentes.has(p.nombre.toUpperCase())) {
+      sheet.appendRow([
+        fecha, hora, "Entrada", p.codigo, p.nombre, p.tipo2,
+        "Lote: INICIAL | Marca: S/M", 0, "", 0, "SISTEMA",
+        "CARGA INICIAL DE CATÁLOGO OFICIAL", "ALMACÉN CENTRAL", "INICIAL", "SI", Utilities.getUuid()
+      ]);
+      insertados++;
+    }
+  });
+  
+  SpreadsheetApp.flush();
+  return { success: true, insertados: insertados };
+}
+
+// ==========================================
+// VACIAR INVENTARIO ANTIGUO EN GOOGLE SHEETS
+// ==========================================
+function vaciarInventarioSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName("Inventario");
+  if (!sheet) return { success: true };
+  const lastRow = sheet.getLastRow();
+  if (lastRow > 1) {
+    sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).clearContent();
+  }
+  SpreadsheetApp.flush();
+  return { success: true };
+}
+
+// ==========================================
+// CARGAR PRODUCTOS MASIVOS DESDE EXCEL
+// ==========================================
+function cargarProductosMasivos(listaProductos, limpiarAntiguo) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName("Inventario");
+  if (!sheet) {
+    sheet = ss.insertSheet("Inventario");
+    sheet.appendRow(["Fecha", "Hora", "Tipo", "Código", "Nombre", "Tipo2", "Lote", "Entrada", "Salida", "Saldo", "Usuario", "Observación", "Área", "Comprobante", "Transcrito", "MovId"]);
+  }
+
+  if (limpiarAntiguo) {
+    const lastRow = sheet.getLastRow();
+    if (lastRow > 1) {
+      sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).clearContent();
+    }
+  }
+
+  const data = sheet.getDataRange().getValues();
+  const nombresExistentes = limpiarAntiguo ? new Set() : new Set(data.slice(1).map(r => String(r[4] || "").trim().toUpperCase()));
+
+  const now = new Date();
+  const fecha = Utilities.formatDate(now, Session.getScriptTimeZone(), "dd/MM/yyyy");
+  const hora = Utilities.formatDate(now, Session.getScriptTimeZone(), "hh:mm:ss a");
+
+  let rowsToAppend = [];
+  let insertados = 0;
+
+  if (Array.isArray(listaProductos)) {
+    listaProductos.forEach(p => {
+      const norm = String(p.nombre || "").trim().toUpperCase();
+      if (norm && !nombresExistentes.has(norm)) {
+        rowsToAppend.push([
+          fecha, hora, "Entrada", p.codigo || "", p.nombre, p.tipo2 || "MATERIAL DE LABORATORIO",
+          "Lote: INICIAL | Marca: S/M", Number(p.stockInicial || 0), "", Number(p.stockInicial || 0), "SISTEMA",
+          "CARGA INICIAL CATALOGO OFICIAL", "ALMACÉN CENTRAL", "INICIAL", "SI", Utilities.getUuid()
+        ]);
+        nombresExistentes.add(norm);
+        insertados++;
+      }
+    });
+  }
+
+  if (rowsToAppend.length > 0) {
+    sheet.getRange(sheet.getLastRow() + 1, 1, rowsToAppend.length, rowsToAppend[0].length).setValues(rowsToAppend);
+    darFormatoEleganteAGoogleSheets();
+    SpreadsheetApp.flush();
+  }
+
+  return { success: true, insertados: insertados };
+}
+
+// ==========================================
+// FORMATO ELEGANTE Y PROFESIONAL PARA GOOGLE SHEETS
+// ==========================================
+function darFormatoEleganteAGoogleSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName("Inventario");
+  if (!sheet) return { success: false };
+
+  const lastRow = sheet.getLastRow();
+  const lastCol = Math.max(sheet.getLastColumn(), 16);
+
+  if (lastRow > 0) {
+    // 1. Estilo Encabezado Principal (Fila 1)
+    const headerRange = sheet.getRange(1, 1, 1, lastCol);
+    headerRange.setBackground("#0f172a")
+               .setFontColor("#38bdf8")
+               .setFontWeight("bold")
+               .setFontSize(10)
+               .setFontFamily("Arial")
+               .setHorizontalAlignment("center")
+               .setVerticalAlignment("middle");
+    sheet.setRowHeight(1, 35);
+    sheet.setFrozenRows(1);
+
+    // 2. Formato para las filas de datos
+    if (lastRow > 1) {
+      const dataRange = sheet.getRange(2, 1, lastRow - 1, lastCol);
+      dataRange.setFontSize(9)
+               .setFontFamily("Arial")
+               .setVerticalAlignment("middle");
+
+      // Alineaciones profesionales
+      sheet.getRange(2, 1, lastRow - 1, 3).setHorizontalAlignment("center"); // Fecha, Hora, Tipo
+      sheet.getRange(2, 4, lastRow - 1, 1).setHorizontalAlignment("center").setNumberFormat("@"); // Código (Preserva ceros a la izquierda)
+      sheet.getRange(2, 5, lastRow - 1, 2).setHorizontalAlignment("left"); // Nombre, Categoría
+      sheet.getRange(2, 7, lastRow - 1, 1).setHorizontalAlignment("center"); // Lote
+      sheet.getRange(2, 8, lastRow - 1, 3).setHorizontalAlignment("right"); // Entrada, Salida, Saldo
+      sheet.getRange(2, 11, lastRow - 1, 6).setHorizontalAlignment("left"); // Datos administrativos
+    }
+  }
+
+  SpreadsheetApp.flush();
+  return { success: true };
+}
+
+
+
+
