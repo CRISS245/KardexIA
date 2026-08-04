@@ -1507,7 +1507,7 @@ select.form-control option{
         <div class="table-header" style="border-bottom:none; margin-bottom:10px;">
           <div class="table-title" style="color:var(--cyan);"><span class="table-title-icon">📋</span> GENERADOR INTELIGENTE DE PECOSA</div>
           <div style="display:flex; gap:10px;">
-            <input type="file" id="upload-excel-historico" accept=".xlsx, .xls" style="display:none;" onchange="procesarExcelHistorico(this)">
+            <input type="file" id="upload-excel-historico" accept=".xlsx, .xls" style="display:none;" onclick="this.value=null" onchange="procesarExcelHistorico(this)">
             <button class="btn-nuevo" onclick="document.getElementById('upload-excel-historico').click()" style="background:linear-gradient(135deg,#eab308,#ca8a04); margin:0;">📂 Cargar Excel Múltiples Meses</button>
             <button class="btn-nuevo" onclick="exportarPecosaImprimir()" style="background:linear-gradient(135deg,var(--blue),#1d4ed8); margin:0;">🖨️ Imprimir Formato</button>
             <button class="btn-nuevo" onclick="exportarPecosaExcel()" style="background:linear-gradient(135deg,var(--green),#047857); margin:0;">📥 Exportar a Excel</button>
@@ -1528,9 +1528,14 @@ select.form-control option{
                 <th style="width:30%">PRODUCTO</th>
                 <th style="width:10%; text-align:center;">PRESENTACIÓN</th>
                 <th style="width:10%; text-align:center;">STOCK ACTUAL</th>
-                <th style="width:10%; text-align:center; color:var(--purple);">PROM. HISTÓRICO</th>
+                <th style="width:10%; text-align:center; color:var(--purple);">MÁX. HISTÓRICO</th>
                 <th style="width:15%; text-align:center; color:var(--cyan);">CANT. A PEDIR</th>
-                <th style="width:5%; text-align:center;"></th>
+                <th style="width:5%; text-align:center;">
+                  <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
+                    <input type="checkbox" id="chk-all-pecosa" onchange="toggleAllPecosa(this)" title="Seleccionar todos">
+                    <button class="action-btn" style="color:var(--red); font-size:1.2rem;" onclick="eliminarSeleccionadosPecosa()" title="Eliminar Seleccionados">🗑️</button>
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody id="tbody-pecosa">
@@ -1543,6 +1548,7 @@ select.form-control option{
         <div style="background:rgba(59,130,246,0.05); border:1px dashed rgba(59,130,246,0.3); padding:15px; border-radius:8px;">
           <h4 style="font-size:0.8rem; color:var(--blue); margin-bottom:10px; font-family:'JetBrains Mono',monospace;">+ AGREGAR PRODUCTO MANUALMENTE</h4>
           <div style="display:flex; gap:10px; align-items:center;">
+            <input type="text" id="pecosa-manual-cod" class="form-control" placeholder="Cód. (Opcional)" style="width:120px;" onchange="validarCodigoManualPecosa(this)">
             <input type="text" id="pecosa-search" list="pecosa-datalist" class="form-control" placeholder="Escriba aquí para buscar, o doble clic para ver la lista..." style="flex:1;" onclick="if(this.value==='') this.select();">
             <datalist id="pecosa-datalist"></datalist>
             <input type="number" id="pecosa-manual-qty" class="form-control" placeholder="Cant." style="width:100px;">
@@ -1608,6 +1614,8 @@ select.form-control option{
         <!-- Contenedor para el resto de las configuraciones abajo -->
         <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; width: 100%; padding-bottom: 20px;">
           
+
+
           <!-- Inteligencia Artificial -->
           <div class="panel-card" style="flex: 1; min-width: 320px; max-width: 400px; padding: 25px; background:#0f172a; border:1px solid #1e293b; border-radius: 12px;">
             <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
@@ -1786,8 +1794,7 @@ select.form-control option{
       <div class="form-row" style="grid-template-columns: 2fr 1fr;">
         <div class="form-group">
           <label>CÓDIGO <span class="req">*</span></label>
-          <input type="text" id="m-codigo" class="form-control" list="datalist-codigos" required autocomplete="off">
-          <datalist id="datalist-codigos"></datalist>
+          <input type="text" id="m-codigo" class="form-control" placeholder="S/C" autocomplete="off">
         </div>
         <div class="form-group">
           <label>PRESENTACIÓN <span class="req">*</span></label>
@@ -2274,7 +2281,17 @@ window.formatLoteBadge = function(loteStr) {
   }
 };
 
-
+window.formatCodigoDisplay = function(codigo, nombre) {
+    let c = String(codigo || '').trim();
+    if (!c || c === 'S/C' || c.startsWith('TEMP-') || c === 'D' || c.length < 6 || isNaN(c)) {
+        if (nombre && typeof window.obtenerCodigoOficial === 'function') {
+            const codOf = window.obtenerCodigoOficial(nombre);
+            if (codOf) return codOf;
+        }
+        return 'S/C';
+    }
+    return c;
+};
 
 window.setTipo = function(tipo, el) {
   document.getElementById('m-tipo').value = tipo;
@@ -2474,6 +2491,11 @@ function showView(viewId) {
     const adminPanel = document.getElementById('admin-users-panel');
     if (adminPanel) adminPanel.style.display = 'none';
   }
+}
+
+// Restauración de la función switchView (alias de showView) para que funcionen los botones del menú
+function switchView(viewId) {
+  showView(viewId);
 }
 
 document.querySelectorAll('.nav-item, .menu-item').forEach(item => {
@@ -2790,22 +2812,46 @@ window.marcarTodoComoTranscrito = function() {
   };
 };
 
-window.quickCheckout = function(codigo) {
+window.quickCheckout = function(codigo, nombreOpcional = null) {
   try {
     const normCod = String(codigo).trim();
-    const p = KARDEX_DATA.find(r => String(r.codigo).trim() === normCod);
+    const isSinCodigo = (normCod === 'S/C' || normCod === '');
+    
+    const normStr = (s) => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .replace(/\[.*?\]/g,'').trim().toLowerCase().replace(/\s+/g,' ')
+        .replace(/\btubos\b/g,'tubo').replace(/\bfrascos\b/g,'frasco');
+    
+    const targetNombre = nombreOpcional ? normStr(nombreOpcional) : null;
+    
+    const p = KARDEX_DATA.find(r => {
+        if (!isSinCodigo) return String(r.codigo).trim() === normCod;
+        if (targetNombre) return normStr(r.nombre) === targetNombre;
+        return String(r.codigo).trim() === normCod;
+    });
+    
     if (!p) {
-      console.error("quickCheckout: Producto no encontrado en KARDEX_DATA:", codigo);
+      console.error("quickCheckout: Producto no encontrado en KARDEX_DATA:", codigo, nombreOpcional);
       return showCustomAlert("Producto no encontrado en la base de datos.", "Error", true);
     }
     
     // Normalizar clave de lote igual que en el resto del sistema
-    const normLK = (str) => String(str || '').split('|')[0].toLowerCase().replace(/[^a-z0-9]/g, '') || 'sinlote';
+    const normLK = (str) => String(str || '').split('|')[0].toLowerCase().replace(/[^a-z0-9]/g, '').replace(/^lote/, '') || 'sinlote';
     
     let lotesStock = {}; // clave norm -> { stock, loteOriginal }
     KARDEX_DATA.forEach(r => {
       if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
-      if (String(r.codigo).trim() !== normCod) return;
+      if (r.tipo === 'Ajuste (Anulación)') return;
+      
+      let isMatch = false;
+      if (!isSinCodigo) {
+          isMatch = (String(r.codigo).trim() === normCod);
+      } else if (targetNombre) {
+          isMatch = (normStr(r.nombre) === targetNombre);
+      } else {
+          isMatch = (String(r.codigo).trim() === normCod);
+      }
+      if (!isMatch) return;
+      
       const lKey = normLK(r.lote);
       if (!lotesStock[lKey]) lotesStock[lKey] = { stock: 0, loteOriginal: r.lote || '' };
       if (r.tipo === 'Entrada' || r.tipo === 'Ajuste' || r.tipo === 'Prestamo') lotesStock[lKey].stock += Number(r.entrada||0);
@@ -2906,11 +2952,17 @@ function renderInventario(onlyMinimo) {
     actionsBtn.innerHTML = `<button class="btn-nuevo" onclick="openModal('Entrada')">+ Registrar Entrada</button>`;
   }
 
-  // Extraer solo el número de lote (parte antes del |) para comparar por lote de forma uniforme
+  // Extraer el nombre de lote de forma exacta para agrupar
   const extractLoteKey = (loteStr) => {
     if (!loteStr) return 'SIN_LOTE';
-    const part = String(loteStr).split('|')[0].trim(); // Ej: 'Lote: 32'
-    return part.toLowerCase().replace(/[^a-z0-9]/g, '') || 'sinlote'; // Ej: 'lote32'
+    let s = String(loteStr).trim().toUpperCase();
+    if (s.includes('|')) {
+      const parts = s.split('|');
+      s = parts[0].replace('LOTE:', '').trim();
+    } else {
+      s = s.replace('LOTE:', '').trim();
+    }
+    return s || 'SIN_LOTE';
   };
 
   const inv = {};
@@ -2918,15 +2970,18 @@ function renderInventario(onlyMinimo) {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(today.getDate() - 30);
   
+  // Se eliminó la inicialización agresiva con PRODUCTOS_OFICIALES_COMPLETOS para mantener los nombres originales.
+
   KARDEX_DATA.forEach(r => {
     if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
     if (r.tipo === 'Ajuste (Anulación)') return;
     
-    let key = r.codigo;
-    // Parche para separar tubos de contingencia que comparten el código 'S/C'
-    if (key === 'S/C' && r.nombre && (r.nombre.toUpperCase().includes('TUBO DE VIDRIO BIO') || r.nombre.toUpperCase().includes('TUBO DE VIDRIO INM'))) {
-        key = key + '_' + (r.nombre.toUpperCase().includes('BIO') ? 'BIO' : 'INM');
-    }
+    const normNombre = (s) => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .trim().toUpperCase().replace(/\s+/g,' ')
+      .replace(/\bTUBOS\b/g,'TUBO').replace(/\bFRASCOS\b/g,'FRASCO');
+    let key = (r.codigo && String(r.codigo).trim() !== '' && String(r.codigo).trim() !== 'S/C') ? String(r.codigo).trim() : normNombre(r.nombre);
+
+
 
     if(!inv[key]) {
       inv[key] = {
@@ -3084,7 +3139,7 @@ function renderInventario(onlyMinimo) {
       }
 
       return catRow + `<tr style="animation-delay:${.1 + idx * .03}s;">
-        <td><span class="codigo-cell">${v.codigo||'—'}</span></td>
+        <td><span class="codigo-cell">${window.formatCodigoDisplay(v.codigo, v.nombre)}</span></td>
         <td><div class="reactivo-name">${nombreLimpio||'—'}</div></td>
         <td><div class="reactivo-type">${v.categoria||'—'}</div></td>
         <td class="num-cell" style="text-align:center; color:var(--cyan); font-weight:bold; font-size:14px;">${consumo30}</td>
@@ -3239,7 +3294,7 @@ function renderInventario(onlyMinimo) {
               priorityCounter++;
           }
           
-          return `<tr class="sub-lote lote-de-${v.codigo}" style="display:none; ${rowStyle} opacity:${opacity};">
+          return `<tr class="sub-lote lote-de-item-${idx}" style="display:none; ${rowStyle} opacity:${opacity};">
             <td style="${firstTdStyle}"></td>
             <td colspan="3" style="padding-left: 10px; ${extraClasses}">
               <div style="display:flex; align-items:center; gap: 15px;">
@@ -3261,9 +3316,9 @@ function renderInventario(onlyMinimo) {
       
       const hasLotes = loteRows.trim().length > 0;
       
-      return catRow + `<tr class="master-row" onclick="toggleLotes('${v.codigo}')" style="animation-delay:${.1 + idx * .03}s; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.03);">
-        <td style="text-align:center; color:var(--cyan); font-size:14px; font-weight:bold;">${hasLotes ? '<span id="icon-'+v.codigo+'">▶</span>' : ''}</td>
-        <td><span class="codigo-cell">${v.codigo||'—'}</span></td>
+      return catRow + `<tr class="master-row" onclick="toggleLotes('item-${idx}')" style="animation-delay:${.1 + idx * .03}s; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.03);">
+        <td style="text-align:center; color:var(--cyan); font-size:14px; font-weight:bold;">${hasLotes ? '<span id="icon-item-'+idx+'">▶</span>' : ''}</td>
+        <td><span class="codigo-cell">${window.formatCodigoDisplay(v.codigo, v.nombre)}</span></td>
         <td><div class="reactivo-name">${v.nombre||'—'}</div></td>
         <td><div class="reactivo-type">${v.categoria||'—'}</div></td>
         
@@ -3293,7 +3348,7 @@ function renderInventario(onlyMinimo) {
           </div>
         </td>
         <td style="text-align:center;" onclick="event.stopPropagation();">
-          <button class="btn-submit" onclick="quickCheckout('${v.codigo}')" style="margin:0; padding:4px 8px; font-size:11px; background:var(--card-hover); color:var(--cyan); border:1px solid var(--cyan);" title="Salida Rápida">⚡ -1</button>
+          <button class="btn-submit" onclick="quickCheckout('${String(v.codigo).replace(/'/g, "\\'")}', '${String(v.nombre||'').replace(/'/g, "\\'")}')" style="margin:0; padding:4px 8px; font-size:11px; background:var(--card-hover); color:var(--cyan); border:1px solid var(--cyan);" title="Salida Rápida">⚡ -1</button>
         </td>
       </tr>
       ${loteRows}`;
@@ -3324,7 +3379,7 @@ function renderInventario(onlyMinimo) {
          }
          
          return `<tr style="animation-delay:${.1 + idx * .03}s;">
-            <td><span class="codigo-cell">${v.codigo||'—'}</span></td>
+            <td><span class="codigo-cell">${window.formatCodigoDisplay(v.codigo, v.nombre)}</span></td>
             <td><div class="reactivo-name" style="color:var(--cyan);">${nombreLimpio||'—'}</div></td>
             <td><div class="reactivo-type" style="color:var(--blue); font-weight:bold;">CONTINGENCIA</div></td>
             <td><div class="lotes-container">${htmlLotes}</div></td>
@@ -3742,22 +3797,121 @@ window.exportPecosaExcel = function(esPrevia = false) {
   }
 };
 
+window.recolectarPecosaDOM = function() {
+    const inputsCod = document.querySelectorAll('.codigo-pecosa-input');
+    inputsCod.forEach((inp, idx) => {
+        if (PECOSA_ITEMS[idx]) {
+            let val = inp.value.trim();
+            if (val.startsWith('TEMP-') || val === 'S/C' || val === 'null' || val === 'undefined') {
+                val = '';
+            }
+            PECOSA_ITEMS[idx].codigo = val;
+        }
+    });
+};
+
 window.renderPecosa = function() {
     const tbody = document.getElementById('tbody-pecosa');
     if(!tbody) return;
-    
+    // Hardcoded Pico Máximo values as requested by user
+    const PICO_MAXIMO_MANUAL = {
+        "TUBO DE PLASTICO CON GEL SEPARADOR X 3.5 ML": 3699,
+        "TUBO DE PLASTICO CON EDTA X 2ML": 3333,
+        "LAMINAS PORTA OBJETO DE VIDRIO": 2350,
+        "TUBO DE PLASTICO CON CITRATO X 1.8 ML": 820,
+        "TUBO DE PLASTICO CON CITRATO X 2.7 ML": 478,
+        "TUBOS DE PLASTICO CON EDTA X 3ML": 474,
+        "KIT CHAQUETA Y PANTALON TALLA M": 254,
+        "GASA FRACCIONADA ESTERIL 5X5 cm": 250,
+        "BOLSA DE PLASTICO NEGRA": 200,
+        "BOLSA DE PLASTICO ROJA": 200,
+        "TUBO DE PLASTICO CON CITRATO X 2.0 ML": 168,
+        "TUBO CON EDTA X 0.5 ML.": 122,
+        "KIT CHAQUETA Y PANTALON TALLA L": 100,
+        "GORRO DESCARTABLE DE ENFERMERA": 100,
+        "TARJETA DE CONTROL VISIBLE DE ALMACEN": 68,
+        "ALITAS VACUTAINER SAFETY-LOK 23 X 3/4": 50,
+        "MANDILON DESCARTABLE T/L": 47,
+        "TUBOS DE PLASTICO CON EDTA X 6ML": 37,
+        "PAPEL TOALLA DOBLADO PQT. x 200 HOJAS": 35,
+        "GUANTES DE NITRILO DESCART. S": 30,
+        "AGUJAS DESCARTABLES 20 X 1": 26,
+        "GUANTES DE NITRILO DESCART. M": 20,
+        "AGUJAS VACUTAINER 21 X 1/2": 13,
+        "CHAQUETA TALLA XL": 13,
+        "ROLLO PARA CODIGO DE BARRA (BIOQUIMICA)": 12,
+        "ALGODÓN x 500 GR": 11,
+        "LAMINAS PARA TEST DE GRAHAM": 10,
+        "FOLDER CARTULINA AZUL": 10,
+        "ALCOHOL PURO 70°": 10,
+        "MASCARILLAS DESCARTABLES": 9,
+        "JERINGA DESC. 5 ML C/AGUJA DE 21x1 1/2": 6,
+        "MASCARILLA KN95": 6,
+        "PLACA DE CERA PARA SELLADO DE CAPILARES": 6,
+        "PAPEL BOND 80": 6,
+        "ESPARADRAPO": 5,
+        "ROLLO PARA PEDESTAL DE RECEPCION (BD)": 5,
+        "ROLLO PARA CODIGO DE BARRA (HEMATOLOGÍA)": 5,
+        "BOLSAS COLECTORA PARA ORINA 50 ML": 4,
+        "BOLIGRAFO TINTA FINA COLOR AZUL": 4,
+        "FRASCO BACTEC PARA HEMOCULTIVOS": 3,
+        "ROLLO PARA PEDESTAL DE RECEPCION ORINA (BD)": 3,
+        "CAJAS PARA TRANSPORTE DE MUESTRAS": 2,
+        "BOLIGRAFO TINTA FINA COLOR ROJO": 2,
+        "AGUJAS DESCARTABLES 23 X 1": 2,
+        "LANCETAS 1.8 DESCARTABLES": 1,
+        "LAPIZ DE CERA PARA VIDRIO ROJO": 1,
+        "PAPEL DE FILTRO CORRIENTE": 1,
+        "FRACOS PARA CELULAS LE": 1,
+        "CAPUCHONES CON EXPULSADOR HOLDER (BD)": 1,
+        "CINTA ADHESIVA DELGADA": 1,
+        "ARCHIVADOR PLASTIFICADO": 1,
+        "REGLA PLASTICA DE 30 CM": 1,
+        "TONER HP 105A (BD)": 1,
+        "ALCOHOL GEL": 1
+    };
+
+    const getManualMax = (nombreProd) => {
+        if (!nombreProd) return null;
+        const normSearch = (s) => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase().replace(/\s+/g,' ').replace(/\bTUBOS\b/g,'TUBO').replace(/\bFRASCOS\b/g,'FRASCO');
+        let search = normSearch(nombreProd);
+        for (let k in PICO_MAXIMO_MANUAL) {
+            let mk = normSearch(k);
+            if (search.includes(mk) || mk.includes(search)) {
+                return PICO_MAXIMO_MANUAL[k];
+            }
+        }
+        return null;
+    };
+
     // Agrupar KARDEX_DATA por producto para obtener el stock actual consolidado
     const inv = {};
     KARDEX_DATA.forEach(r => {
         if (!r) return;
         if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
-        const key = String(r.codigo || 'S/C').trim();
-        if(!inv[key]) inv[key] = { codigo: key, nombre: r.nombre, stock: 0 };
+        
+        let rawCod = (r.codigo && !String(r.codigo).startsWith('TEMP-') && String(r.codigo).trim() !== 'S/C') ? String(r.codigo).trim() : '';
+        if (!rawCod && r.nombre) {
+            let codOf = window.obtenerCodigoOficial(r.nombre);
+            if (codOf) rawCod = codOf;
+        }
+        
+        const normNombre = (s) => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+          .trim().toUpperCase().replace(/\s+/g,' ')
+          .replace(/\bTUBOS\b/g,'TUBO').replace(/\bFRASCOS\b/g,'FRASCO');
+          
+        let key = rawCod ? rawCod : normNombre(r.nombre);
+        
+        if(!inv[key]) inv[key] = { codigo: rawCod, nombre: r.nombre, stock: 0, categoria: String(r.tipo2 || 'OTROS').toUpperCase() };
         
         const tipo = String(r.tipo || '').trim().toLowerCase();
-        if(tipo === 'entrada' || tipo === 'prestamo') inv[key].stock += Number(r.entrada||0);
-        if(tipo === 'salida' || tipo === 'descarte' || tipo === 'devolucion') inv[key].stock -= Number(r.salida||0);
-        if(tipo === 'ajuste' || tipo === 'ajuste (anulación)') {
+        if (tipo === 'ajuste (anulación)' || tipo === 'ajuste (anulacion)') return;
+        
+        if (tipo === 'entrada' || tipo === 'prestamo') {
+            inv[key].stock += Number(r.entrada||0);
+        } else if (tipo === 'salida' || tipo === 'descarte' || tipo === 'devolucion') {
+            inv[key].stock -= Number(r.salida||0);
+        } else if (tipo.includes('ajuste')) {
             inv[key].stock += Number(r.entrada||0);
             inv[key].stock -= Number(r.salida||0);
         }
@@ -3767,35 +3921,145 @@ window.renderPecosa = function() {
     PECOSA_ITEMS = [];
     
     HISTORICO_DATA.forEach(h => {
-        let hCod = String(h.codigo || '').trim();
-        let stockActual = inv[hCod] ? inv[hCod].stock : 0;
+        let rawCod = String(h.codigo || '').trim();
+        if (rawCod.startsWith('TEMP-') || rawCod === 'S/C') rawCod = '';
         
-        // Fallback: Si el stock dice 0 (no lo encontró por código), buscar por nombre
-        if (stockActual === 0 && h.producto) {
-            const cleanH = String(h.producto).toUpperCase().replace(/[^A-Z0-9 ]/g, "").trim();
+        let prodName = String(h.producto || h.nombre || 'S/N').trim();
+        // Si por algún motivo viniera numérico (ej: "350"), rescatar nombre de KARDEX_DATA
+        if (!isNaN(prodName)) {
+            if (rawCod) {
+                const matchK = KARDEX_DATA.find(k => k.codigo === rawCod);
+                if (matchK && matchK.nombre) prodName = String(matchK.nombre).trim();
+            }
+        }
+        if (!isNaN(prodName)) return; // Ignorar registros basura numéricos que no tienen nombre real
+        
+        // Autocompletar código si estaba vacío o era TEMP
+        if (!rawCod && prodName) {
+            const codOf = window.obtenerCodigoOficial(prodName);
+            if (codOf) rawCod = codOf;
+            else {
+                const kMatch = KARDEX_DATA.find(k => k.nombre && k.nombre.replace(/\[.*?\]/g, '').trim().toUpperCase() === prodName.replace(/\[.*?\]/g, '').trim().toUpperCase());
+                if (kMatch && kMatch.codigo && !String(kMatch.codigo).startsWith('TEMP-') && String(kMatch.codigo).trim() !== 'S/C') {
+                    rawCod = String(kMatch.codigo).trim();
+                }
+            }
+        }
+        
+        const normNombre = (s) => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+          .trim().toUpperCase().replace(/\s+/g,' ')
+          .replace(/\bTUBOS\b/g,'TUBO').replace(/\bFRASCOS\b/g,'FRASCO');
+          
+        let stockKey = rawCod ? rawCod : normNombre(prodName);
+        let stockActual = inv[stockKey] ? inv[stockKey].stock : 0;
+        
+        if (stockActual === 0 && prodName) {
+            const cleanH = prodName.toUpperCase().replace(/[^A-Z0-9 ]/g, "").trim();
             for (let k in inv) {
                 const cleanInv = String(inv[k].nombre || '').toUpperCase().replace(/[^A-Z0-9 ]/g, "").trim();
                 if (cleanInv && (cleanInv === cleanH || cleanInv.includes(cleanH) || cleanH.includes(cleanInv))) {
                     stockActual = inv[k].stock;
-                    hCod = inv[k].codigo; // Auto-corregir el código para que apunte al real del catálogo
+                    if (!rawCod && inv[k].codigo && !String(inv[k].codigo).startsWith('TEMP-')) rawCod = inv[k].codigo;
                     break;
                 }
             }
         }
         
-        let sugerido = Math.max(0, Math.ceil(h.promedio_mensual) - stockActual);
+        // Calcular necesidad neta (MÁXIMO HISTÓRICO - STOCK ACTUAL)
+        let manualOverride = getManualMax(prodName);
+        let maxHist = manualOverride !== null ? manualOverride : (h.maximo_mensual !== undefined ? h.maximo_mensual : (h.promedio_mensual || 0));
+        let netNecesidad = Math.max(0, maxHist - stockActual);
+        let sugerido = Math.ceil(netNecesidad);
         if (sugerido > 0) {
             PECOSA_ITEMS.push({
-                codigo: hCod,
-                nombre: h.producto || h.nombre || 'S/N',
+                codigo: rawCod,
+                nombre: prodName,
                 presentacion: h.presentacion || 'UNIDADES',
                 stock: stockActual,
-                promedio: Math.ceil(h.promedio_mensual),
+                promedio: Math.ceil(maxHist),
                 sugerido: sugerido,
-                manual: false
+                manual: false,
+                categoria: inv[stockKey] ? (inv[stockKey].categoria || 'OTROS') : 'OTROS'
             });
         }
     });
+    
+    // === SEGUNDO PASE: Red de seguridad para productos del Kardex con stock <= 0 que no están en HISTORICO_DATA ===
+    const normNombrePecosa = (s) => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .trim().toUpperCase().replace(/\s+/g,' ')
+      .replace(/\bTUBOS\b/g,'TUBO').replace(/\bFRASCOS\b/g,'FRASCO');
+    
+    for (let key in inv) {
+        if (inv[key].stock > 0) continue; // Solo productos con stock 0 o negativo
+        
+        // Verificar si ya está en PECOSA_ITEMS
+        const cleanKeyInv = normNombrePecosa(inv[key].nombre);
+        const yaExiste = PECOSA_ITEMS.some(p => {
+            if (p.codigo && inv[key].codigo && p.codigo === inv[key].codigo) return true;
+            const cleanP = normNombrePecosa(p.nombre);
+            return cleanP === cleanKeyInv || cleanP.includes(cleanKeyInv) || cleanKeyInv.includes(cleanP);
+        });
+        if (yaExiste) continue;
+        
+        // Buscar el Pico Máximo (Consumo Máximo Mensual) desde los movimientos del Kardex
+        let totalSalidas = 0;
+        let salidasPorMes = {};
+        let tieneMovimientos = false;
+        KARDEX_DATA.forEach(r => {
+            if (!r || (r.observacion && String(r.observacion).includes('[ANULADO]'))) return;
+            let rCod = (r.codigo && !String(r.codigo).startsWith('TEMP-') && String(r.codigo).trim() !== 'S/C') ? String(r.codigo).trim() : '';
+            if (!rCod && r.nombre) { let c = window.obtenerCodigoOficial(r.nombre); if(c) rCod = c; }
+            let rKey = rCod ? rCod : normNombrePecosa(r.nombre);
+            
+            if (rKey === key) {
+                tieneMovimientos = true;
+                const tipo = String(r.tipo || '').trim().toLowerCase();
+                let cantSalida = 0;
+                if (tipo === 'salida' || tipo === 'descarte' || tipo === 'devolucion') {
+                    cantSalida = Number(r.salida || 0);
+                }
+                if (String(r.tipo || '').includes('Ajuste') && Number(r.salida || 0) > 0) {
+                    cantSalida = Number(r.salida || 0);
+                }
+                
+                if (cantSalida > 0) {
+                    totalSalidas += cantSalida;
+                    if (r.fecha) {
+                        const parts = String(r.fecha).split('/');
+                        if (parts.length === 3) {
+                            let m = parts[1] + '/' + parts[2];
+                            salidasPorMes[m] = (salidasPorMes[m] || 0) + cantSalida;
+                        }
+                    }
+                }
+            }
+        });
+        
+        let maxKardex = 0;
+        for (let m in salidasPorMes) {
+            if (salidasPorMes[m] > maxKardex) maxKardex = salidasPorMes[m];
+        }
+        
+        // Calcular sugerido (Pico Máximo - Stock Actual)
+        let manualOverrideKardex = getManualMax(inv[key].nombre);
+        if (manualOverrideKardex !== null) maxKardex = manualOverrideKardex;
+        let netNec = Math.max(0, maxKardex - inv[key].stock);
+        let sug = Math.ceil(netNec);
+        
+        // Incluir SOLAMENTE si el sugerido es mayor a 0 (es decir, hay un consumo histórico validado)
+        if (sug > 0) {
+            PECOSA_ITEMS.push({
+                codigo: inv[key].codigo || '',
+                nombre: String(inv[key].nombre || '').replace(/\[.*?\]/g, '').trim(),
+                presentacion: 'UNIDADES',
+                stock: inv[key].stock,
+                promedio: Math.ceil(maxKardex),
+                sugerido: sug,
+                manual: false,
+                categoria: inv[key].categoria || 'OTROS'
+            });
+        }
+    }
     
     drawPecosaTable();
 };
@@ -3808,13 +4072,32 @@ window.drawPecosaTable = function() {
         tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted);">No hay sugerencias automáticas basadas en el histórico. Agregue productos manualmente.</td></tr>';
         return;
     }
+
+    PECOSA_ITEMS.sort((a, b) => {
+        const catWeight = (cat) => {
+            const c = String(cat||'').toUpperCase();
+            if (c.includes('LABORATORIO')) return 1;
+            if (c.includes('ESCRITORIO')) return 2;
+            if (c.includes('LIMPIEZA')) return 3;
+            return 4;
+        };
+        const wa = catWeight(a.categoria);
+        const wb = catWeight(b.categoria);
+        if (wa !== wb) return wa - wb;
+        return String(a.nombre||'').localeCompare(String(b.nombre||''));
+    });
     
     tbody.innerHTML = PECOSA_ITEMS.map((item, idx) => {
         const rowStyle = item.manual ? 'background: rgba(234, 179, 8, 0.05);' : '';
+        let codeVal = String(item.codigo || '').trim();
+        if (codeVal.startsWith('TEMP-') || codeVal === 'S/C') codeVal = '';
+        
         return `
         <tr style="animation-delay:${.1 + idx * .03}s; ${rowStyle}">
             <td style="text-align:center;">${idx + 1}</td>
-            <td style="font-weight:bold; color:var(--cyan); text-align:center;">${item.codigo}</td>
+            <td style="text-align:center;">
+                <input type="text" class="codigo-pecosa-input form-control" style="width:130px; text-align:center; font-weight:bold; color:var(--cyan); padding:4px;" value="${codeVal}" placeholder="" onchange="actualizarCodigoTablaPecosa(${idx}, this)">
+            </td>
             <td>
                 <div class="reactivo-name">${item.nombre}</div>
                 ${item.manual ? '<span style="font-size:9px; font-weight:bold; color:var(--yellow); border:1px solid var(--yellow); padding:2px 4px; border-radius:4px; margin-top:4px; display:inline-block;">AGREGADO MANUALMENTE</span>' : ''}
@@ -3835,7 +4118,10 @@ window.drawPecosaTable = function() {
                 <input type="number" class="form-control" style="width:80px; text-align:center; font-weight:bold; color:var(--green); font-size:1.2rem; background:rgba(16,185,129,0.1); border-color:var(--green);" value="${item.sugerido}" min="1" onchange="PECOSA_ITEMS[${idx}].sugerido = Number(this.value)">
             </td>
             <td style="text-align:center;">
-                <button class="action-btn" style="color:var(--red);" onclick="eliminarPecosaItem(${idx})" title="Quitar de la PECOSA">🗑️</button>
+                <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
+                    <input type="checkbox" class="chk-pecosa-row" value="${idx}">
+                    <button class="action-btn" style="color:var(--red);" onclick="eliminarPecosaItem(${idx})" title="Quitar de la PECOSA">🗑️</button>
+                </div>
             </td>
         </tr>
     `}).join('');
@@ -3844,7 +4130,18 @@ window.drawPecosaTable = function() {
     
     const datalist = document.getElementById('pecosa-datalist');
     if (datalist && KARDEX_DATA && KARDEX_DATA.length > 0) {
-        datalist.innerHTML = KARDEX_DATA.map(p => `<option value="${p.codigo} - ${p.nombre.replace(/"/g, '&quot;')}">`).join('');
+        const seen = new Set();
+        let optionsHtml = '';
+        KARDEX_DATA.forEach(p => {
+            let pCod = (p.codigo && !String(p.codigo).startsWith('TEMP-') && String(p.codigo).trim() !== 'S/C') ? String(p.codigo).trim() : '';
+            let pPrefix = pCod ? (pCod + ' - ') : '';
+            let label = `${pPrefix}${p.nombre.replace(/"/g, '&quot;')}`;
+            if (!seen.has(label)) {
+                seen.add(label);
+                optionsHtml += `<option value="${label}">`;
+            }
+        });
+        datalist.innerHTML = optionsHtml;
     }
 };
 
@@ -3946,15 +4243,39 @@ window.procesarExcelHistorico = function(input) {
                 let cantStr = String(row[colCant] || '').trim();
                 let cant = Number(cantStr.replace(/,/g, '')) || 0; // Limpiar comas
                 
-                // Tratar de obtener código si existe, sino usar un hash del nombre
+                // Si la celda está vacía (posible celda combinada), heredar de la fila anterior
+                if (!nom && window._lastValidExcelNom) {
+                    nom = window._lastValidExcelNom;
+                }
+                // Si nom resulta ser un número puro (ej: "350"), buscar en la fila la columna con texto de producto
+                else if (nom !== '' && !isNaN(nom)) {
+                    let textFound = '';
+                    for (let c = 0; c < row.length; c++) {
+                        let val = String(row[c] || '').trim();
+                        if (val && isNaN(val) && val.length >= 3 && !val.includes('/')) {
+                            let vUpper = val.toUpperCase();
+                            if (vUpper !== 'UNIDAD' && vUpper !== 'UNIDADES' && vUpper !== 'CAJA' && vUpper !== 'CAJAS' && vUpper !== 'PAQUETE' && vUpper !== 'FCO') {
+                                textFound = val;
+                                break; // No modificamos colNom globalmente para no arruinar las siguientes filas
+                            }
+                        }
+                    }
+                    if (textFound) nom = textFound;
+                }
+                
+                if (nom && isNaN(nom)) {
+                    window._lastValidExcelNom = nom;
+                }
+                
+                // Tratar de obtener código si existe
                 let cod = colCod !== -1 ? String(row[colCod] || '').trim() : '';
                 
-                // Si el Excel trae un código basura temporal, lo borramos para forzar la re-búsqueda
+                // Si el Excel trae un código basura temporal, lo borramos
                 if (cod.startsWith("GEN-") || cod.startsWith("TEMP-")) {
                     cod = "";
                 }
                 
-                if (!nom || nom.length < 3) continue;
+                if (!nom || nom.length < 3 || !isNaN(nom)) continue;
                 
                 // Si no hay código en el Excel, intentamos buscarlo en la base de datos por nombre
                 if (!cod) {
@@ -4028,18 +4349,10 @@ window.procesarExcelHistorico = function(input) {
                     }
                     const prodMatch = bestMatch;
                     
-                    if (prodMatch && prodMatch.codigo) {
-                        cod = prodMatch.codigo;
+                    if (prodMatch && prodMatch.codigo && !String(prodMatch.codigo).startsWith('TEMP-') && String(prodMatch.codigo).trim() !== 'S/C') {
+                        cod = String(prodMatch.codigo).trim();
                     } else {
-                        // Inventar un código provisional único basado en el nombre para agruparlo entre pestañas
-                        // Usamos un simple hash del nombre o asignamos uno secuencial si es la primera vez que lo vemos
-                        let existingFake = Object.values(acumulado).find(a => a.nombre.toUpperCase() === nom.toUpperCase());
-                        if (existingFake) {
-                            cod = existingFake.codigo;
-                        } else {
-                            cod = "TEMP-" + String(codigoInventadoCounter).padStart(3, '0');
-                            codigoInventadoCounter++;
-                        }
+                        cod = "";
                     }
                 }
                 
@@ -4052,16 +4365,19 @@ window.procesarExcelHistorico = function(input) {
                 else if (presStr.includes('GAL')) presFinal = 'GALONES';
                 else if (presStr.includes('LIT') || presStr.includes('FCO') || presStr.includes('FRAS')) presFinal = 'LITROS';
                 
-                if (!acumulado[cod]) {
-                    acumulado[cod] = { codigo: cod, nombre: nom, presentacion: presFinal, total: 0 };
+                const keyAcumulado = cod ? cod : nom.toUpperCase();
+                if (!acumulado[keyAcumulado]) {
+                    acumulado[keyAcumulado] = { codigo: cod, nombre: nom, presentacion: presFinal, total: 0, mesesConConsumo: 0, maximo: 0 };
                 }
-                if (nom.length > acumulado[cod].nombre.length) {
-                    acumulado[cod].nombre = nom;
+                if (nom.length > acumulado[keyAcumulado].nombre.length) {
+                    acumulado[keyAcumulado].nombre = nom;
                 }
                 if (presFinal !== 'UNIDADES') {
-                    acumulado[cod].presentacion = presFinal;
+                    acumulado[keyAcumulado].presentacion = presFinal;
                 }
-                acumulado[cod].total += cant;
+                acumulado[keyAcumulado].total += cant;
+                if (cant > 10) acumulado[keyAcumulado].mesesConConsumo += 1;
+                if (cant > acumulado[keyAcumulado].maximo) acumulado[keyAcumulado].maximo = cant;
             }
         });
         
@@ -4073,7 +4389,8 @@ window.procesarExcelHistorico = function(input) {
                 codigo: acumulado[cod].codigo,
                 producto: acumulado[cod].nombre,
                 presentacion: acumulado[cod].presentacion,
-                promedio_mensual: (acumulado[cod].total / numTabs)
+                promedio_mensual: (acumulado[cod].mesesConConsumo > 0 ? (acumulado[cod].total / acumulado[cod].mesesConConsumo) : (acumulado[cod].total > 0 ? (acumulado[cod].total / numTabs) : 0)),
+                maximo_mensual: acumulado[cod].maximo
             });
         }
         
@@ -4104,19 +4421,65 @@ window.procesarExcelHistorico = function(input) {
     reader.readAsArrayBuffer(file);
 };
 
+window.validarCodigoManualPecosa = function(inputElem) {
+    const rawCod = String(inputElem.value || "").trim();
+    if (rawCod === "" || rawCod === "S/C") {
+        inputElem.value = "";
+        return "";
+    }
+    // Regla estricta: Minimo 8 caracteres y SOLO numeros
+    if (rawCod.length < 8 || !/^\d+$/.test(rawCod)) {
+        showCustomAlert("CÓDIGO INVÁLIDO: El código debe tener 8 o más dígitos y contener únicamente números (por ejemplo, un código de barras). Si no tiene, déjelo en blanco o S/C.", "Aviso", true);
+        inputElem.value = "";
+        return "";
+    }
+    inputElem.value = rawCod;
+    return rawCod;
+};
+
+window.actualizarCodigoTablaPecosa = function(idx, inputElem) {
+    const validCod = validarCodigoManualPecosa(inputElem);
+    PECOSA_ITEMS[idx].codigo = validCod;
+};
+
 window.eliminarPecosaItem = function(idx) {
     PECOSA_ITEMS.splice(idx, 1);
     drawPecosaTable();
 };
 
+window.toggleAllPecosa = function(chk) {
+    const rows = document.querySelectorAll('.chk-pecosa-row');
+    rows.forEach(r => r.checked = chk.checked);
+};
+
+window.eliminarSeleccionadosPecosa = function() {
+    const rows = document.querySelectorAll('.chk-pecosa-row:checked');
+    if (rows.length === 0) return showCustomAlert("Seleccione al menos un ítem para eliminar.", "Atención", true);
+    if (!confirm(`¿Está seguro de eliminar ${rows.length} ítems de la PECOSA?`)) return;
+    
+    let indices = Array.from(rows).map(r => parseInt(r.value)).sort((a,b) => b - a);
+    indices.forEach(idx => {
+        PECOSA_ITEMS.splice(idx, 1);
+    });
+    
+    let master = document.getElementById('chk-all-pecosa');
+    if (master) master.checked = false;
+    
+    drawPecosaTable();
+    showCustomAlert(`${rows.length} ítems eliminados correctamente.`, "Éxito");
+};
+
 window.agregarPecosaManual = function() {
     const inputNom = document.getElementById('pecosa-search');
     const inputCant = document.getElementById('pecosa-manual-qty');
+    const inputCod = document.getElementById('pecosa-manual-cod');
+    
     const nom = inputNom.value.trim().toUpperCase();
     const cant = Number(inputCant.value);
+    const codManual = inputCod ? validarCodigoManualPecosa(inputCod) : '';
     
     if (!nom || cant <= 0) {
-        return showCustomAlert("Debe seleccionar un producto (con su código) e ingresar una cantidad mayor a cero.", "Atención", true);
+        return showCustomAlert("Debe seleccionar un producto e ingresar una cantidad mayor a cero.", "Atención", true);
     }
     
     // Extraer código si el string es "XXXXX - Nombre"
@@ -4154,15 +4517,43 @@ window.agregarPecosaManual = function() {
             drawPecosaTable();
         });
     } else {
-        // Encontrar stock y promedio real si existe
-        const dataHist = HISTORICO_DATA.find(h => h.codigo === cod);
-        const dataFis = KARDEX_DATA.find(k => k.codigo === cod);
+        // Encontrar stock real calculándolo desde el Kardex
+        let stockManual = 0;
+        const normNombre = (s) => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase().replace(/\s+/g,' ').replace(/\bTUBOS\b/g,'TUBO').replace(/\bFRASCOS\b/g,'FRASCO');
+        let pKey = (cod && cod !== 'S/C') ? cod : window.obtenerCodigoOficial(nameToUse);
+        if (!pKey) pKey = normNombre(nameToUse);
+        
+        KARDEX_DATA.forEach(r => {
+            if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
+            let rawCod = (r.codigo && !String(r.codigo).startsWith('TEMP-') && String(r.codigo).trim() !== 'S/C') ? String(r.codigo).trim() : '';
+            if (!rawCod && r.nombre) { let c = window.obtenerCodigoOficial(r.nombre); if(c) rawCod = c; }
+            let rKey = rawCod ? rawCod : normNombre(r.nombre);
+            
+            if (rKey === pKey) {
+                const tipo = String(r.tipo || '').trim().toLowerCase();
+                if(tipo === 'entrada' || tipo === 'prestamo') stockManual += Number(r.entrada||0);
+                if(tipo === 'salida' || tipo === 'descarte' || tipo === 'devolucion') stockManual -= Number(r.salida||0);
+                if(tipo === 'ajuste' || tipo === 'ajuste (anulación)') {
+                    stockManual += Number(r.entrada||0);
+                    stockManual -= Number(r.salida||0);
+                }
+            }
+        });
+
+        const dataHist = HISTORICO_DATA.find(h => {
+            let hCod = String(h.codigo || '').trim();
+            if (hCod.startsWith('TEMP-') || hCod === 'S/C') hCod = '';
+            let hName = String(h.producto || h.nombre || '').trim();
+            if (!hCod && hName) { let c = window.obtenerCodigoOficial(hName); if(c) hCod = c; }
+            let hKey = hCod ? hCod : normNombre(hName);
+            return hKey === pKey;
+        });
         
         PECOSA_ITEMS.push({
             codigo: cod,
             nombre: nameToUse,
             presentacion: 'UNIDADES',
-            stock: dataFis ? dataFis.saldo : '—',
+            stock: stockManual,
             promedio: dataHist ? Math.ceil(dataHist.promedio_mensual) : '—',
             sugerido: cant,
             manual: true
@@ -4176,6 +4567,7 @@ window.agregarPecosaManual = function() {
 };
 
 window.exportarPecosaExcel = async function(esPrevia = false) {
+    window.recolectarPecosaDOM();
     if (PECOSA_ITEMS.length === 0) return showCustomAlert("No hay items en la lista de PECOSA para exportar.", "Atención", true);
     if (typeof ExcelJS === 'undefined' || typeof saveAs === 'undefined') return showCustomAlert("Las librerías de Excel aún están cargando. Intente en unos segundos.", "Atención", true);
 
@@ -4256,9 +4648,11 @@ window.exportarPecosaExcel = async function(esPrevia = false) {
     let n = 1;
     PECOSA_ITEMS.forEach(item => {
         if(item.sugerido > 0) {
+            let cleanCod = String(item.codigo || '').trim();
+            if (cleanCod.startsWith('TEMP-') || cleanCod === 'S/C') cleanCod = '';
             let row = worksheet.addRow([
                 n++,
-                item.codigo,
+                cleanCod,
                 item.sugerido,
                 item.nombre,
                 item.presentacion,
@@ -4292,16 +4686,19 @@ window.exportarPecosaExcel = async function(esPrevia = false) {
 };
 
 window.exportarPecosaImprimir = function() {
+    window.recolectarPecosaDOM();
     if (PECOSA_ITEMS.length === 0) return showCustomAlert("No hay items en la lista de PECOSA para imprimir.", "Atención", true);
     
     const rows = [];
     let n = 1;
     PECOSA_ITEMS.forEach(item => {
         if(item.sugerido > 0) {
+            let cleanCod = String(item.codigo || '').trim();
+            if (cleanCod.startsWith('TEMP-') || cleanCod === 'S/C') cleanCod = '';
             rows.push(`
                 <tr>
                     <td>${n++}</td>
-                    <td>${item.codigo}</td>
+                    <td>${cleanCod}</td>
                     <td>${item.sugerido}</td>
                     <td style="text-align:left;">${item.nombre}</td>
                     <td>${item.presentacion}</td>
@@ -4575,7 +4972,7 @@ window.exportBalanceMensual = async function(esPrevia = false) {
       if (!cats[cat][prodKey]) cats[cat][prodKey] = { 
         nombre: nLimpio, presentacion: uPres, 
         saldoAnterior: 0, ingresos: 0, consumos: 0, 
-        observaciones: new Set(), lotesStock: {} 
+        lotesStock: {} 
       };
       
       let loteRaw = r.lote || 'S/N';
@@ -4584,7 +4981,10 @@ window.exportBalanceMensual = async function(esPrevia = false) {
         fExp = loteRaw.split('Vence:')[1].split('|')[0].trim();
       }
       if (fExp !== 'S/N' && typeof cats[cat][prodKey].lotesStock[fExp] === 'undefined') {
-        cats[cat][prodKey].lotesStock[fExp] = 0;
+        cats[cat][prodKey].lotesStock[fExp] = { saldoAnterior: 0, ingresos: 0, consumos: 0, observaciones: new Set() };
+      }
+      if (fExp === 'S/N' && typeof cats[cat][prodKey].lotesStock['S/N'] === 'undefined') {
+        cats[cat][prodKey].lotesStock['S/N'] = { saldoAnterior: 0, ingresos: 0, consumos: 0, observaciones: new Set() };
       }
       
       const prodData = cats[cat][prodKey];
@@ -4595,26 +4995,37 @@ window.exportBalanceMensual = async function(esPrevia = false) {
       if (rDate < startDate) {
         if (t === 'entrada' || t === 'prestamo' || t === 'ajuste' || t === 'ajuste (anulación)') {
           prodData.saldoAnterior += ent;
-          if (fExp !== 'S/N') prodData.lotesStock[fExp] += ent;
+          prodData.lotesStock[fExp].saldoAnterior += ent;
         }
         if (t === 'salida' || t === 'descarte' || t === 'devolucion' || t === 'ajuste' || t === 'ajuste (anulación)') {
           prodData.saldoAnterior -= sal;
-          if (fExp !== 'S/N') prodData.lotesStock[fExp] -= sal;
+          prodData.lotesStock[fExp].saldoAnterior -= sal;
         }
       } else {
         if (t === 'entrada' || t === 'prestamo') {
           prodData.ingresos += ent;
-          if (fExp !== 'S/N') prodData.lotesStock[fExp] += ent;
+          prodData.lotesStock[fExp].ingresos += ent;
         }
         if (t === 'salida' || t === 'descarte' || t === 'devolucion') {
           prodData.consumos += sal;
-          if (fExp !== 'S/N') prodData.lotesStock[fExp] -= sal;
+          prodData.lotesStock[fExp].consumos += sal;
         }
         if (t === 'ajuste' || t === 'ajuste (anulación)') { 
           prodData.ingresos += ent; prodData.consumos += sal; 
-          if (fExp !== 'S/N') { prodData.lotesStock[fExp] += ent; prodData.lotesStock[fExp] -= sal; }
+          prodData.lotesStock[fExp].ingresos += ent; 
+          prodData.lotesStock[fExp].consumos += sal; 
         }
-        if (r.observacion && !String(r.observacion).includes('Salida Rápida')) prodData.observaciones.add(r.observacion);
+        if (r.observacion) {
+          const obsStr = String(r.observacion).trim();
+          const obsUpper = obsStr.toUpperCase();
+          if (obsStr !== '' && 
+              (obsUpper.includes('EMERGENCIA') || 
+               obsUpper.includes('PRESTAMO') || 
+               obsUpper.includes('PRÉSTAMO') || 
+               obsUpper.includes('TRANSFERENCIA'))) {
+            prodData.lotesStock[fExp].observaciones.add(obsStr);
+          }
+        }
       }
     });
     
@@ -4735,28 +5146,32 @@ window.exportBalanceMensual = async function(esPrevia = false) {
          prods.forEach(p => {
             if(p.saldoAnterior<=0 && p.ingresos<=0 && p.consumos<=0) return;
             
-            let saldoF = p.saldoAnterior + p.ingresos - p.consumos;
-            let obs = Array.from(p.observaciones).join(' | ');
-            let lotesActivos = Object.keys(p.lotesStock).filter(k => p.lotesStock[k] > 0);
-            let fExpStr = 'S/N';
-            if (lotesActivos.length === 1) fExpStr = lotesActivos[0];
-            else if (lotesActivos.length > 1) fExpStr = 'VARIOS';
-            else {
-                let todos = Object.keys(p.lotesStock);
-                if (todos.length === 1) fExpStr = todos[0];
-                else if (todos.length > 1) fExpStr = 'VARIOS';
-            }
+            let lotesKeys = Object.keys(p.lotesStock).filter(k => {
+                let ld = p.lotesStock[k];
+                return ld.saldoAnterior !== 0 || ld.ingresos !== 0 || ld.consumos !== 0;
+            });
+            if (lotesKeys.length === 0) return;
+            
+            let rs = lotesKeys.length;
             
             htmlPreview += `<tr>`;
-            htmlPreview += `<td style="border:1px solid #000;">${nHtml++}</td>`;
-            htmlPreview += `<td style="border:1px solid #000; text-align:left;">${p.nombre}</td>`;
-            htmlPreview += `<td style="border:1px solid #000;">${p.presentacion}</td>`;
-            htmlPreview += `<td style="border:1px solid #000; font-weight:bold; color:#0f766e;">${p.saldoAnterior}</td>
-            <td style="border:1px solid #000;">${fExpStr}</td>
-            <td style="border:1px solid #000; color:#047857; font-weight:bold;">${p.ingresos > 0 ? '+'+p.ingresos : ''}</td>
-            <td style="border:1px solid #000; color:#be123c; font-weight:bold;">${p.consumos > 0 ? '-'+p.consumos : ''}</td>
-            <td style="border:1px solid #000; font-weight:bold; color:#0f766e;">${saldoF}</td>
-            <td style="border:1px solid #000; font-size:9px;">${obs}</td></tr>`;
+            htmlPreview += `<td rowspan="${rs}" style="border:1px solid #000; vertical-align:middle;">${nHtml++}</td>`;
+            htmlPreview += `<td rowspan="${rs}" style="border:1px solid #000; text-align:left; vertical-align:middle;">${p.nombre}</td>`;
+            htmlPreview += `<td rowspan="${rs}" style="border:1px solid #000; vertical-align:middle;">${p.presentacion}</td>`;
+            
+            lotesKeys.forEach((lk, i) => {
+                if (i > 0) htmlPreview += `<tr>`;
+                let ld = p.lotesStock[lk];
+                let sF = ld.saldoAnterior + ld.ingresos - ld.consumos;
+                let obsLot = Array.from(ld.observaciones || []).join(' | ');
+                htmlPreview += `<td style="border:1px solid #000; font-weight:bold; color:#0f766e;">${ld.saldoAnterior}</td>`;
+                htmlPreview += `<td style="border:1px solid #000;">${lk}</td>`;
+                htmlPreview += `<td style="border:1px solid #000; color:#047857; font-weight:bold;">${ld.ingresos > 0 ? '+'+ld.ingresos : ''}</td>`;
+                htmlPreview += `<td style="border:1px solid #000; color:#be123c; font-weight:bold;">${ld.consumos > 0 ? '-'+ld.consumos : ''}</td>`;
+                htmlPreview += `<td style="border:1px solid #000; font-weight:bold; color:#0f766e;">${sF}</td>`;
+                htmlPreview += `<td style="border:1px solid #000; font-size:9px; vertical-align:middle;">${obsLot}</td>`;
+                htmlPreview += `</tr>`;
+            });
          });
       });
       htmlPreview += `</table>`;
@@ -4787,38 +5202,47 @@ window.exportBalanceMensual = async function(esPrevia = false) {
       prods.forEach(p => {
         if (p.saldoAnterior <= 0 && p.ingresos <= 0 && p.consumos <= 0) return;
         
-        let saldoFinal = p.saldoAnterior + p.ingresos - p.consumos;
-        let lotesActivos = Object.keys(p.lotesStock).filter(k => p.lotesStock[k] > 0);
-        let fExpStr = 'S/N';
-        if (lotesActivos.length === 1) fExpStr = lotesActivos[0];
-        else if (lotesActivos.length > 1) fExpStr = 'VARIOS';
-        else {
-            let todos = Object.keys(p.lotesStock);
-            if (todos.length === 1) fExpStr = todos[0];
-            else if (todos.length > 1) fExpStr = 'VARIOS';
-        }
+        let lotesKeys = Object.keys(p.lotesStock).filter(k => {
+            let ld = p.lotesStock[k];
+            return ld.saldoAnterior !== 0 || ld.ingresos !== 0 || ld.consumos !== 0;
+        });
+        if (lotesKeys.length === 0) return;
         
-        ws.getCell(`A${currentRow}`).value = n;
-        ws.getCell(`B${currentRow}`).value = p.nombre;
-        ws.getCell(`C${currentRow}`).value = p.presentacion;
-        ws.getCell(`D${currentRow}`).value = p.saldoAnterior;
-        ws.getCell(`E${currentRow}`).value = fExpStr;
-        ws.getCell(`F${currentRow}`).value = p.ingresos;
-        ws.getCell(`G${currentRow}`).value = p.consumos;
-        ws.getCell(`H${currentRow}`).value = saldoFinal;
-        ws.getCell(`I${currentRow}`).value = Array.from(p.observaciones).join(' | ');
+        let rs = lotesKeys.length;
+        let startRow = currentRow;
         
-        ['A','B','C','D','E','F','G','H','I'].forEach(c => {
-           const cell = ws.getCell(`${c}${currentRow}`);
-           cell.border = { top: {style: 'medium'}, left: {style:'medium'}, bottom: {style: 'medium'}, right: {style:'medium'} };
-           if (c !== 'B') cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-           else cell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
-           cell.font = { name: 'Arial', size: 8 };
-           if (c === 'A' || c === 'D' || c === 'H') cell.font = { name: 'Arial', bold: true, size: 8 }; 
+        lotesKeys.forEach((lk, i) => {
+            let rNum = startRow + i;
+            let ld = p.lotesStock[lk];
+            let sF = ld.saldoAnterior + ld.ingresos - ld.consumos;
+            let obsLot = Array.from(ld.observaciones || []).join(' | ');
+            ws.getCell(`D${rNum}`).value = ld.saldoAnterior;
+            ws.getCell(`E${rNum}`).value = lk;
+            ws.getCell(`F${rNum}`).value = ld.ingresos;
+            ws.getCell(`G${rNum}`).value = ld.consumos;
+            ws.getCell(`H${rNum}`).value = sF;
+            ws.getCell(`I${rNum}`).value = obsLot;
+            for(let c=1; c<=9; c++) {
+                let cell = ws.getCell(rNum, c);
+                cell.border = { top: {style:'medium'}, left: {style:'medium'}, bottom: {style:'medium'}, right: {style:'medium'} };
+                cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+                cell.font = { name: 'Arial', size: 8 };
+                if (c === 1 || c === 4 || c === 8) cell.font = { name: 'Arial', bold: true, size: 8 }; 
+            }
         });
         
-        currentRow++;
-        n++;
+        if (rs > 1) {
+            ws.mergeCells(`A${startRow}:A${startRow + rs - 1}`);
+            ws.mergeCells(`B${startRow}:B${startRow + rs - 1}`);
+            ws.mergeCells(`C${startRow}:C${startRow + rs - 1}`);
+        }
+        
+        ws.getCell(`A${startRow}`).value = n++;
+        ws.getCell(`B${startRow}`).value = p.nombre;
+        ws.getCell(`C${startRow}`).value = p.presentacion;
+        ws.getCell(`B${startRow}`).alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+        
+        currentRow += rs;
       });
     });
   } 
@@ -5292,7 +5716,8 @@ window.exportInventarioCSV = function(esPrevia = false) {
   KARDEX_DATA.forEach(r => {
     if (!r) return;
     if (r.observacion && String(r.observacion).includes('[ANULADO]')) return; // Ignorar anulados
-    const key = `${r.codigo}||${r.lote || ''}`;
+    const codKey = (r.codigo && String(r.codigo).trim() !== '' && String(r.codigo).trim() !== 'S/C') ? String(r.codigo).trim() : String(r.nombre).trim().toUpperCase();
+    const key = `${codKey}||${r.lote || ''}`;
     if(!inv[key]) inv[key] = { codigo: r.codigo, nombre: r.nombre, cat: r.tipo2, lote: r.lote||'', entradas: 0, salidas: 0 };
     if(r.tipo === 'Entrada' || r.tipo === 'Prestamo') inv[key].entradas += Number(r.entrada||0);
     if(r.tipo === 'Salida' || r.tipo === 'Descarte' || r.tipo === 'Devolucion') inv[key].salidas += Number(r.salida||0);
@@ -5399,10 +5824,13 @@ window.toggleDashboardAlerts = function() {
 };
 
 function renderTable() {
+  const tbody = document.getElementById('tbody-kardex');
+  const paginationWrap = document.getElementById('pagination-wrap');
   try {
-    if (FILTERED_DATA.length === 0) {
-      if(tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--muted);">No se encontraron datos o resultados.</td></tr>';
+    if (!FILTERED_DATA || FILTERED_DATA.length === 0) {
+      if(tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:var(--muted);">No hay movimientos registrados en este filtro.</td></tr>';
       if(paginationWrap) paginationWrap.innerHTML = '';
+      try { updateKPIs(); } catch(e){}
       return;
     }
     
@@ -5436,8 +5864,10 @@ function renderTable() {
       });
     
     sortedForBalance.forEach(({ r }) => {
-      const keyLote = `${r.codigo || 'SIN_COD'}||${normL(r.lote)}`;
-      const keyProd = `${r.codigo || 'SIN_COD'}`;
+      let rCod = (r.codigo && String(r.codigo).trim() !== '' && String(r.codigo).trim() !== 'S/C' && !String(r.codigo).startsWith('TEMP-')) ? String(r.codigo).trim() : '';
+      let rNom = String(r.nombre || '').replace(/\[.*?\]/g, '').trim().toUpperCase();
+      const keyProd = rCod ? rCod : rNom;
+      const keyLote = `${keyProd}||${normL(r.lote)}`;
       if (!balances[keyLote]) balances[keyLote] = 0;
       if (!balancesProd[keyProd]) balancesProd[keyProd] = 0;
       
@@ -5447,8 +5877,6 @@ function renderTable() {
         balances[keyLote] += Number(r.entrada || 0); balances[keyLote] -= Number(r.salida || 0);
         balancesProd[keyProd] += Number(r.entrada || 0); balancesProd[keyProd] -= Number(r.salida || 0);
       }
-      r.saldo_calculado = balances[keyLote];
-      r.saldo_prod = balancesProd[keyProd];
     });
     
     const totalPages = Math.ceil(FILTERED_DATA.length / rowsPerPage);
@@ -5491,7 +5919,7 @@ function renderTable() {
               ? `<div class="fecha-date">${r.fecha||'—'}</div><div class="fecha-time" style="color:var(--muted2); font-size:10px;">${r.hora||''}</div>`
               : `<div class="fecha-date" style="text-transform:capitalize;">${relativeTime}</div><div class="fecha-time" style="color:var(--muted2); font-size:10px;">${r.fecha||'—'} ${r.hora||''}</div>`;
 
-            const btnAnular = (!r.observacion || !String(r.observacion).includes('[ANULADO]')) && ['Salida', 'Descarte', 'Entrada', 'Devolucion', 'Prestamo'].includes(r.tipo) ? 
+            const btnAnular = (!r.observacion || !String(r.observacion).includes('[ANULADO]')) && ['Salida', 'Descarte', 'Entrada', 'Devolucion', 'Prestamo', 'Ajuste'].includes(r.tipo) ? 
                 `<button class="action-btn" style="color:var(--muted); font-size:14px; padding:0 4px; margin-left:10px; cursor:pointer;" data-fecha="${String(r.fecha||'').replace(/"/g, '&quot;')}" data-hora="${String(r.hora||'').replace(/"/g, '&quot;')}" data-codigo="${String(r.codigo||'').replace(/"/g, '&quot;')}" data-movid="${String(r.movId||'').replace(/"/g, '&quot;')}" onclick="openAnularModal(this.dataset.fecha, this.dataset.hora, this.dataset.codigo, this.dataset.movid)" title="Anular Movimiento (Genera Contra-movimiento)">🗑️</button>` : '';
 
             let obsIcon = r.observacion && !isAnulado ? `<span title="${String(r.observacion).replace(/"/g, '&quot;')}" style="cursor:help; margin-left:4px; font-size:12px; filter:grayscale(1) opacity(0.7);">💬</span>` : '';
@@ -5504,7 +5932,7 @@ function renderTable() {
                   ${badgeText}
                 </div>
               </td>
-              <td class="codigo-cell" style="text-decoration:${textDecoration};">${r.codigo||'—'}</td>
+              <td class="codigo-cell" style="text-decoration:${textDecoration};">${window.formatCodigoDisplay(r.codigo, r.nombre)}</td>
               <td>
                 <strong class="reactivo-name" style="text-decoration:${textDecoration};">${r.nombre||'—'}</strong>${annulledBadge}
                 <br><span class="reactivo-type" style="text-decoration:${textDecoration};">${r.tipo2||'—'}</span>
@@ -5514,7 +5942,7 @@ function renderTable() {
               </td>
               <td class="num-cell ${r.entrada ? 'entrada' : 'dash'}" style="text-decoration:${textDecoration};">${r.entrada !== null && r.entrada !== '' && r.entrada !== undefined ? '+' + String(r.entrada).replace('+','') : '–'}</td>
               <td class="num-cell ${r.salida ? 'salida' : 'dash'}" style="text-decoration:${textDecoration};">${r.salida !== null && r.salida !== '' && r.salida !== undefined ? '-' + String(r.salida).replace('-','') : '–'}</td>
-              <td class="num-cell saldo" style="text-decoration:${textDecoration};">${r.saldo_calculado !== undefined ? r.saldo_calculado : (r.saldo !== null && r.saldo !== undefined ? r.saldo : '—')}</td>
+              <td class="num-cell saldo" style="text-decoration:${textDecoration};">${(r.saldo !== null && r.saldo !== undefined && r.saldo !== '') ? r.saldo : '—'}</td>
               <td style="text-decoration:${textDecoration};"><div class="user-cell"><div class="user-dot">${r.usuario ? String(r.usuario)[0].toUpperCase() : '?'}</div>${r.usuario||'—'}</div></td>
               <td>
                 <div style="display:flex; gap:5px; justify-content:center;">
@@ -5586,13 +6014,22 @@ window.toggleSort = function() {
 // Filtros y Búsqueda
 window.applyFilters = function() {
   try {
-    const q = searchInput ? searchInput.value.toLowerCase() : '';
-    const tipoVal = filterTipo ? filterTipo.value : 'ALL';
-    const catVal = filterCat ? filterCat.value : 'ALL';
+    // Limpieza agresiva de filas vacías (borradas manualmente en Google Sheets)
+    if (window.KARDEX_DATA) {
+        window.KARDEX_DATA = window.KARDEX_DATA.filter(r => r && r.nombre && String(r.nombre).trim() !== '');
+    }
+
+    const sInput = document.getElementById('search-input');
+    const fTipo = document.getElementById('filter-tipo');
+    const fCat = document.getElementById('filter-categoria') || document.getElementById('filter-cat');
+
+    const q = sInput ? sInput.value.toLowerCase() : '';
+    const tipoVal = fTipo ? fTipo.value : 'ALL';
+    const catVal = fCat ? fCat.value : 'ALL';
     const dateVal = document.getElementById('filter-fecha') ? document.getElementById('filter-fecha').value : (document.getElementById('filter-date') ? document.getElementById('filter-date').value : '');
     const hideAnnulled = document.getElementById('hide-annulled') ? document.getElementById('hide-annulled').checked : false;
     
-    FILTERED_DATA = KARDEX_DATA.filter(r => {
+    FILTERED_DATA = (KARDEX_DATA || []).filter(r => {
       if (!r) return false;
       
       // EXCLUIR los tubos de contingencia del historial principal (Resumen Total)
@@ -5766,7 +6203,7 @@ function updateKPIs() {
       if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
       
       // Inventario
-      let codigoStr = r.codigo !== undefined && r.codigo !== null ? String(r.codigo) : 'SIN-CODIGO';
+      let codigoStr = (r.codigo && String(r.codigo).trim() !== '' && String(r.codigo).trim() !== 'S/C') ? String(r.codigo).trim() : String(r.nombre).trim().toUpperCase();
       if (!inv[codigoStr]) inv[codigoStr] = { nombre: r.nombre, stock: 0, salidas30d: 0, cat: r.tipo2 };
       inv[codigoStr].stock += Number(r.entrada || 0);
       inv[codigoStr].stock -= Number(r.salida || 0);
@@ -5818,7 +6255,6 @@ function updateKPIs() {
       if (!r) return;
       if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
       if (r.tipo === 'Ajuste (Anulación)') return;
-      if (r.nombre && (String(r.nombre).toUpperCase().includes('TUBO DE VIDRIO BIOQUIMICA') || String(r.nombre).toUpperCase().includes('TUBO DE VIDRIO INMUNOLOGIA'))) return;
       const key = r.lote !== undefined && r.lote !== null ? String(r.lote) : null;
       if (!key) return;
       if (!balancesLotes[key]) balancesLotes[key] = 0;
@@ -5877,93 +6313,99 @@ function updateKPIs() {
     }
   
     // Update Donut Chart
-    if(window.chartDonut) {
-      window.chartDonut.data.datasets[0].data = [stOptimo, stBajo, stCritico, stAgotado];
-      window.chartDonut.update();
-      const donutTotal = document.querySelector('.donut-val');
-      if (donutTotal) donutTotal.textContent = Object.keys(inv).length;
-      
-      // Update legend
-      const sum = stOptimo + stBajo + stCritico + stAgotado;
-      if(document.getElementById('donut-optimo')) document.getElementById('donut-optimo').textContent = sum>0 ? Math.round((stOptimo/sum)*100) + '%' : '0%';
-      if(document.getElementById('donut-bajo')) document.getElementById('donut-bajo').textContent = sum>0 ? Math.round((stBajo/sum)*100) + '%' : '0%';
-      if(document.getElementById('donut-critico')) document.getElementById('donut-critico').textContent = sum>0 ? Math.round((stCritico/sum)*100) + '%' : '0%';
-      if(document.getElementById('donut-agotado')) document.getElementById('donut-agotado').textContent = sum>0 ? Math.round((stAgotado/sum)*100) + '%' : '0%';
-    }
+    try {
+      if(window.chartDonut && window.chartDonut.data) {
+        window.chartDonut.data.datasets[0].data = [stOptimo, stBajo, stCritico, stAgotado];
+        window.chartDonut.update();
+        const donutTotal = document.querySelector('.donut-val');
+        if (donutTotal) donutTotal.textContent = Object.keys(inv).length;
+        
+        // Update legend
+        const sum = stOptimo + stBajo + stCritico + stAgotado;
+        if(document.getElementById('donut-optimo')) document.getElementById('donut-optimo').textContent = sum>0 ? Math.round((stOptimo/sum)*100) + '%' : '0%';
+        if(document.getElementById('donut-bajo')) document.getElementById('donut-bajo').textContent = sum>0 ? Math.round((stBajo/sum)*100) + '%' : '0%';
+        if(document.getElementById('donut-critico')) document.getElementById('donut-critico').textContent = sum>0 ? Math.round((stCritico/sum)*100) + '%' : '0%';
+        if(document.getElementById('donut-agotado')) document.getElementById('donut-agotado').textContent = sum>0 ? Math.round((stAgotado/sum)*100) + '%' : '0%';
+      }
+    } catch(e) { console.error("Error en chartDonut:", e); }
     
     // Update Line Chart
-    if(window.chartMov) {
-      let labels = [];
-      let data = [];
-      let totalSalidas = 0;
-      for(let i=6; i>=0; i--) {
-        let d = new Date();
-        d.setDate(d.getDate() - i);
-        let dayStr = d.toLocaleDateString('es-PE', { weekday:'short' }).toUpperCase();
-        labels.push(dayStr.substring(0,3));
+    try {
+      if(window.chartMov && window.chartMov.data) {
+        let labels = [];
+        let data = [];
+        let totalSalidas = 0;
+        for(let i=6; i>=0; i--) {
+          let d = new Date();
+          d.setDate(d.getDate() - i);
+          let dayStr = d.toLocaleDateString('es-PE', { weekday:'short' }).toUpperCase();
+          labels.push(dayStr.substring(0,3));
+          
+          let sum = 0;
+          KARDEX_DATA.forEach(r => {
+             const t = String(r.tipo||'').trim().toLowerCase();
+             if (t !== 'salida' || (r.observacion && String(r.observacion).includes('[ANULADO]'))) return;
+             let dArr = String(r.fecha||'').split('/');
+             let rDate = new Date();
+             if(dArr.length === 3) {
+               const yy = dArr[2].length === 2 ? '20' + dArr[2] : dArr[2];
+               rDate = new Date(parseInt(yy), parseInt(dArr[1]) - 1, parseInt(dArr[0]));
+             } else {
+               rDate = new Date(r.fecha);
+             }
+             
+             if (rDate.getDate() === d.getDate() && rDate.getMonth() === d.getMonth() && rDate.getFullYear() === d.getFullYear()) {
+                sum += Number(r.salida||0);
+             }
+          });
+          data.push(sum);
+          totalSalidas += sum;
+        }
         
-        let sum = 0;
+        window.chartMov.data.labels = labels;
+        window.chartMov.data.datasets[0].data = data;
+        window.chartMov.update();
+        
+        const mt = document.getElementById('mov-total');
+        if (mt) mt.textContent = totalSalidas;
+      }
+    } catch(e) { console.error("Error en chartMov:", e); }
+    
+    // Update Bar Chart (Usuarios 30 días)
+    try {
+      if(window.chartCatBar && window.chartCatBar.data) {
+        let users = {};
         KARDEX_DATA.forEach(r => {
            const t = String(r.tipo||'').trim().toLowerCase();
            if (t !== 'salida' || (r.observacion && String(r.observacion).includes('[ANULADO]'))) return;
-           let dArr = String(r.fecha||'').split('/');
-           let rDate = new Date();
-           if(dArr.length === 3) {
-             const yy = dArr[2].length === 2 ? '20' + dArr[2] : dArr[2];
-             rDate = new Date(parseInt(yy), parseInt(dArr[1]) - 1, parseInt(dArr[0]));
-           } else {
-             rDate = new Date(r.fecha);
+           let isLast30 = false;
+           if (r.fecha) {
+              let dArr = String(r.fecha||'').split('/');
+              let rDate = new Date();
+              if(dArr.length === 3) {
+                const yy = dArr[2].length === 2 ? '20' + dArr[2] : dArr[2];
+                rDate = new Date(parseInt(yy), parseInt(dArr[1]) - 1, parseInt(dArr[0]));
+              } else {
+                rDate = new Date(r.fecha);
+              }
+              const diffTime = Math.abs(new Date() - rDate);
+              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+              if(diffDays <= 30) isLast30 = true;
            }
            
-           if (rDate.getDate() === d.getDate() && rDate.getMonth() === d.getMonth() && rDate.getFullYear() === d.getFullYear()) {
-              sum += Number(r.salida||0);
+           if (isLast30) {
+              let u = r.usuario || 'Desconocido';
+              if (!users[u]) users[u] = 0;
+              users[u] += Number(r.salida||0);
            }
         });
-        data.push(sum);
-        totalSalidas += sum;
+        
+        let sortedUsers = Object.keys(users).map(k => ({name: k, val: users[k]})).sort((a,b) => b.val - a.val).slice(0, 5);
+        window.chartCatBar.data.labels = sortedUsers.map(x => x.name.length > 15 ? x.name.substring(0, 15) + '...' : x.name);
+        window.chartCatBar.data.datasets[0].data = sortedUsers.map(x => x.val);
+        window.chartCatBar.update();
       }
-      
-      window.chartMov.data.labels = labels;
-      window.chartMov.data.datasets[0].data = data;
-      window.chartMov.update();
-      
-      const mt = document.getElementById('mov-total');
-      if (mt) mt.textContent = totalSalidas;
-    }
-    
-    // Update Bar Chart (Usuarios 30 días)
-    if(window.chartCatBar) {
-      let users = {};
-      KARDEX_DATA.forEach(r => {
-         const t = String(r.tipo||'').trim().toLowerCase();
-         if (t !== 'salida' || (r.observacion && String(r.observacion).includes('[ANULADO]'))) return;
-         let isLast30 = false;
-         if (r.fecha) {
-            let dArr = String(r.fecha||'').split('/');
-            let rDate = new Date();
-            if(dArr.length === 3) {
-              const yy = dArr[2].length === 2 ? '20' + dArr[2] : dArr[2];
-              rDate = new Date(parseInt(yy), parseInt(dArr[1]) - 1, parseInt(dArr[0]));
-            } else {
-              rDate = new Date(r.fecha);
-            }
-            const diffTime = Math.abs(new Date() - rDate);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-            if(diffDays <= 30) isLast30 = true;
-         }
-         
-         if (isLast30) {
-            let u = r.usuario || 'Desconocido';
-            if (!users[u]) users[u] = 0;
-            users[u] += Number(r.salida||0);
-         }
-      });
-      
-      let sortedUsers = Object.keys(users).map(k => ({name: k, val: users[k]})).sort((a,b) => b.val - a.val).slice(0, 5);
-      window.chartCatBar.data.labels = sortedUsers.map(x => x.name.length > 15 ? x.name.substring(0, 15) + '...' : x.name);
-      window.chartCatBar.data.datasets[0].data = sortedUsers.map(x => x.val);
-      window.chartCatBar.update();
-    }
+    } catch(e) { console.error("Error en chartCatBar:", e); }
     
     // Mermas y Descartes calculation
     let totalMermas = 0;
@@ -6048,11 +6490,24 @@ function renderDashboardAlerts() {
       if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
       if (r.nombre && (String(r.nombre).toUpperCase().includes('TUBO DE VIDRIO BIOQUIMICA') || String(r.nombre).toUpperCase().includes('TUBO DE VIDRIO INMUNOLOGIA'))) return;
       
+      const normNombreAlert = (s) => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .trim().toUpperCase().replace(/\s+/g,' ')
+        .replace(/\bTUBOS\b/g,'TUBO').replace(/\bFRASCOS\b/g,'FRASCO');
+      
       // Total product stock
-      let codStr = r.codigo !== undefined && r.codigo !== null ? String(r.codigo) : 'SIN-CODIGO';
+      let rawCodAlert = (r.codigo && !String(r.codigo).startsWith('TEMP-') && String(r.codigo).trim() !== '' && String(r.codigo).trim() !== 'S/C') ? String(r.codigo).trim() : '';
+      if (!rawCodAlert && r.nombre) { let c = window.obtenerCodigoOficial(r.nombre); if(c) rawCodAlert = c; }
+      let codStr = rawCodAlert ? rawCodAlert : normNombreAlert(r.nombre);
+      
       if (!inv[codStr]) inv[codStr] = { stock: 0, nombre: r.nombre };
-      if (r.tipo === 'Entrada' || r.tipo === 'Ajuste' || r.tipo === 'Prestamo') inv[codStr].stock += Number(r.entrada || 0);
-      if (r.tipo === 'Salida' || r.tipo === 'Ajuste' || r.tipo === 'Descarte' || r.tipo === 'Devolucion') inv[codStr].stock -= Number(r.salida || 0);
+      const tipoAlert = String(r.tipo || '').trim();
+      if (tipoAlert === 'Entrada' || tipoAlert === 'Prestamo') inv[codStr].stock += Number(r.entrada || 0);
+      if (tipoAlert === 'Salida' || tipoAlert === 'Descarte' || tipoAlert === 'Devolucion') inv[codStr].stock -= Number(r.salida || 0);
+      if (tipoAlert === 'Ajuste') {
+        inv[codStr].stock += Number(r.entrada || 0);
+        inv[codStr].stock -= Number(r.salida || 0);
+      }
+      if (tipoAlert === 'Ajuste (Anulación)') return; // Ya fue manejado al anular
       
       // Stock by Lote (Normalizado por producto)
       const lRaw = r.lote !== undefined && r.lote !== null ? String(r.lote) : '';
@@ -6180,31 +6635,28 @@ window.filterUsuariosDropdown = function(tipo) {
   let usuariosLocales = [...(window.ALL_USERS || [])];
   
   // Asegurar Dr. Aarón
-  if (!usuariosLocales.some(u => u.nombre.includes('Aarón') || u.nombre.includes('Aaron'))) {
+  if (!usuariosLocales.some(u => u && u.nombre && (u.nombre.includes('Aarón') || u.nombre.includes('Aaron')))) {
       usuariosLocales.push({ nombre: 'Dr. Aarón', rol: 'Personal de Almacén' });
   }
 
   const cleanName = (n) => {
-     let str = n.trim();
+     let str = String(n || '').trim();
      if (str === 'María S.') return 'Maria S.';
      if (str === 'Christian R' || str === 'Christian R.') return 'Christian R.';
      return str;
   };
   
   usuariosLocales.forEach(u => {
+     if (!u || !u.nombre) return;
      let nombreNorm = cleanName(u.nombre);
-     if (addedNames.has(nombreNorm)) return;
+     if (!nombreNorm || addedNames.has(nombreNorm)) return;
      
-     let rol = String(u.rol || 'Técnico de Laboratorio').trim();
-     let rolUpper = rol.toUpperCase();
+     let rol = String(u.rol || 'Personal de Almacén').trim();
+     let rolNorm = rol.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
      
      // Evaluar permisos reales basados en el ROL del perfil
-     let hasFullAccess = rolUpper.includes('ALMAC') || rolUpper.includes('ADMINISTRADOR') || rolUpper.includes('DOCTOR') || rolUpper.includes('DR.');
-     let isSoloMermas = rolUpper.includes('TÉCNICO') || rolUpper.includes('TECNICO') || rolUpper.includes('TEC.') || rolUpper.includes('FLEBOTOMISTA');
-     
-     if (!hasFullAccess && !isSoloMermas) {
-         isSoloMermas = true; // Por seguridad, si el rol es desconocido, solo ve mermas
-     }
+     let isSoloMermas = (rolNorm.includes('TECNICO') || rolNorm.includes('TEC') || rolNorm.includes('FLEBOTOMISTA')) && !rolNorm.includes('ALMAC');
+     let hasFullAccess = !isSoloMermas;
      
      if (tipo === 'Descarte') {
          // Regla específica: Ocultar a Dr. Aarón de mermas
@@ -6239,48 +6691,66 @@ window.filterUsuariosDropdown = function(tipo) {
   }
 };
 
-if(typeof google !== 'undefined') {
-  google.script.run.withSuccessHandler(function(users) {
-    const s = document.getElementById('m-usuario');
-    if(s) {
-      if(!users || users.length === 0) {
-        s.innerHTML = '<option value="">Sin usuarios (Cree pestaña Usuarios)</option>';
-      } else {
-        window.ALL_USERS = users;
-        window.filterUsuariosDropdown(document.getElementById('m-tipo').value);
-      }
-    }
-  }).getUsuarios();
-
-  google.script.run.withSuccessHandler(function(datos) {
-    try {
-      KARDEX_DATA = datos;
-      // Parche retroactivo para que reportes e historial siempre muestren la cantidad
-      KARDEX_DATA.forEach(r => {
-         if (r && r.tipo === 'Salida' && r.observacion && String(r.observacion).toUpperCase().includes('EMERGENCIA') && !String(r.observacion).includes(String(r.salida))) {
-             r.observacion = `${r.observacion} (SE TRANSFIERE ${r.salida} A EMERGENCIA)`.trim();
-         }
-      });
-      applyFilters();
-    } catch(e) {
-      if(tbody) tbody.innerHTML = `<tr><td colspan="10" style="color:red;text-align:center;">Error inicializando: ${e.message}</td></tr>`;
-    }
-  }).withFailureHandler(function(error) {
-    if(tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--red);">Error al cargar: ' + error + '</td></tr>';
-  }).getKardexData();
-} else {
-  // Simulador local si no está en Apps Script
-  setTimeout(() => {
-    KARDEX_DATA = [
-      {fecha:'15/05/2025',hora:'08:30',tipo:'Entrada',codigo:'R-001',nombre:'Glucosa Oxidasa',tipo2:'Reactivo',lote:'L-8821',entrada:150,salida:null,saldo:150,usuario:'Juan P.',area:'Química',observacion:''},
-      {fecha:'15/05/2025',hora:'09:15',tipo:'Salida',codigo:'I-022',nombre:'Puntas 200µL',tipo2:'Insumo',lote:'L-998',entrada:null,salida:500,saldo:2000,usuario:'María G.',area:'Inmunología',observacion:''}
-    ];
+let initAttempts = 0;
+function initApp() {
+  // Renderizar la interfaz inmediatamente con datos actuales/locales para eliminar "Cargando..."
+  try {
     applyFilters();
-  }, 1000);
+    if (window.renderInventario) window.renderInventario(false);
+  } catch(e) { console.error("Error inicializando vista local:", e); }
+
+  if (typeof google !== 'undefined' && google.script && google.script.run) {
+    google.script.run.withSuccessHandler(function(users) {
+      if (users && users.length > 0) {
+        window.ALL_USERS = users;
+        const mTipo = document.getElementById('m-tipo');
+        if (window.filterUsuariosDropdown && mTipo) window.filterUsuariosDropdown(mTipo.value);
+      }
+    }).getUsuarios();
+
+    google.script.run.withSuccessHandler(function(datos) {
+      try {
+        KARDEX_DATA = datos || [];
+        KARDEX_DATA.forEach(r => {
+           if (r && r.tipo === 'Salida' && r.observacion && String(r.observacion).toUpperCase().includes('EMERGENCIA') && !String(r.observacion).includes(String(r.salida))) {
+               r.observacion = `${r.observacion} (SE TRANSFIERE ${r.salida} A EMERGENCIA)`.trim();
+           }
+        });
+        applyFilters();
+        if (window.renderInventario) window.renderInventario(false);
+      } catch(e) {
+        console.error("Error al procesar datos del servidor:", e);
+      }
+    }).withFailureHandler(function(error) {
+      console.error("Error de servidor Apps Script:", error);
+      const tbody = document.getElementById('tbody-kardex');
+      if(tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--red);padding:25px;">⚠️ Error al conectar con Google Sheets: ' + error + '</td></tr>';
+      KARDEX_DATA = [];
+      applyFilters();
+      if (window.renderInventario) window.renderInventario(false);
+    }).getKardexData();
+  } else {
+    initAttempts++;
+    if (initAttempts < 15) {
+      // Reintentar cada 200ms hasta que google.script.run esté fully loaded en el iframe de Google
+      setTimeout(initApp, 200);
+    }
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
 }
 
 // Modal Formulario
 window.openModal = function(tipo = 'Entrada') {
+  const btn = document.getElementById('btn-save');
+  if (btn) { btn.disabled = false; btn.textContent = 'Guardar Movimiento'; }
+  const btnFirmar = document.getElementById('btn-firmar');
+  if (btnFirmar) { btnFirmar.disabled = false; btnFirmar.textContent = 'Firmar'; }
+
   document.getElementById('modal-mov').classList.add('open');
   document.getElementById('form-mov').reset();
   
@@ -6322,6 +6792,10 @@ window.openModal = function(tipo = 'Entrada') {
 };
 window.closeModal = function(id = 'modal-mov') {
   document.getElementById(id).classList.remove('open');
+  const btn = document.getElementById('btn-save');
+  if (btn) { btn.disabled = false; btn.textContent = 'Guardar Movimiento'; }
+  const btnFirmar = document.getElementById('btn-firmar');
+  if (btnFirmar) { btnFirmar.disabled = false; btnFirmar.textContent = 'Firmar'; }
   if (id === 'modal-mov') {
     document.getElementById('form-mov').reset();
   }
@@ -6415,6 +6889,18 @@ window.confirmarGuardadoContingencia = function(force = false, bypassPin = false
   const areaVal = document.getElementById('c-area').value;
   let obsFinal = document.getElementById('c-observacion').value.trim();
 
+  // ESCUDO DE VALIDACIÓN DE STOCK DISPONIBLE ANTES DE GUARDAR CONTINGENCIA
+  if (tipoVal === 'Salida' || tipoVal === 'Descarte' || tipoVal === 'Devolucion') {
+    const stockDisp = window.obtenerStockActualProducto(nombreF, 'S/C');
+    if (cant > stockDisp) {
+      if (btnFirmar) { btnFirmar.disabled = false; btnFirmar.textContent = 'Firmar'; }
+      document.getElementById('modal-pin').classList.remove('open');
+      let accionText = (tipoVal === 'Descarte') ? 'la Falla/Merma' : (tipoVal === 'Devolucion' ? 'la devolución' : 'la salida');
+      let prodClean = nombreF.replace(/\[.*?\]/g, '').trim();
+      return showCustomAlert(`⚠️ <strong>Movimiento denegado:</strong> Estás intentando registrar ${accionText} de <strong>${cant}</strong> unidad(es) de <strong>${prodClean}</strong>, pero el stock actual disponible es únicamente de <strong>${stockDisp}</strong> unidad(es).`, '🚨 Stock Insuficiente', true);
+    }
+  }
+
   const isEmergency = areaVal.toUpperCase().includes('EMERGENCIA') || obsFinal.toUpperCase().includes('EMERGENCIA');
   
   if (tipoVal === 'Salida' && isEmergency) {
@@ -6466,6 +6952,44 @@ window.confirmarGuardadoContingencia = function(force = false, bypassPin = false
     }).registrarMovimiento(datos);
   }
 };
+window.obtenerStockActualProducto = function(nombre, codigo) {
+    if (!KARDEX_DATA || KARDEX_DATA.length === 0) return 0;
+    
+    let normCod = (codigo && String(codigo).trim() !== '' && String(codigo).trim() !== 'S/C' && !String(codigo).startsWith('TEMP-')) ? String(codigo).trim() : '';
+    let normNom = String(nombre || '').replace(/\[.*?\]/g, '').trim().toUpperCase();
+    
+    let entradas = 0;
+    let salidas = 0;
+    
+    KARDEX_DATA.forEach(r => {
+        if (!r) return;
+        if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
+        if (r.tipo === 'Ajuste (Anulación)') return;
+        
+        let rCod = (r.codigo && !String(r.codigo).startsWith('TEMP-') && String(r.codigo).trim() !== 'S/C') ? String(r.codigo).trim() : '';
+        let rNom = String(r.nombre || '').replace(/\[.*?\]/g, '').trim().toUpperCase();
+        
+        let match = false;
+        if (normCod && rCod) {
+            match = (normCod === rCod);
+        } else if (normNom && rNom) {
+            match = (normNom === rNom);
+        }
+        
+        if (match) {
+            const tipo = String(r.tipo || '').trim();
+            if (tipo === 'Entrada' || tipo === 'Prestamo') entradas += Number(r.entrada || 0);
+            if (tipo === 'Salida' || tipo === 'Descarte' || tipo === 'Devolucion') salidas += Number(r.salida || 0);
+            if (tipo.includes('Ajuste')) {
+                entradas += Number(r.entrada || 0);
+                salidas += Number(r.salida || 0);
+            }
+        }
+    });
+    
+    return Math.max(0, entradas - salidas);
+};
+
 window.guardarMovimiento = function(e) {
   e.preventDefault();
   
@@ -6483,6 +7007,20 @@ window.guardarMovimiento = function(e) {
     if (tipoM !== "Descarte") {
       showCustomAlert("Tu perfil solo tiene autorización para registrar Mermas (Fallas/Descartes).", "Acceso Denegado", true);
       return;
+    }
+  }
+
+  // ESCUDO DE VALIDACIÓN DE STOCK DISPONIBLE
+  const cantVal = parseFloat(document.getElementById('m-cantidad').value) || 0;
+  const nomVal = document.getElementById('m-nombre').value;
+  const codVal = document.getElementById('m-codigo').value;
+  
+  if (tipoM === 'Salida' || tipoM === 'Descarte' || tipoM === 'Devolucion') {
+    const stockDisp = window.obtenerStockActualProducto(nomVal, codVal);
+    if (cantVal > stockDisp) {
+      let accionText = (tipoM === 'Descarte') ? 'la Falla/Merma' : (tipoM === 'Devolucion' ? 'la devolución' : 'la salida');
+      let prodClean = nomVal.replace(/\[.*?\]/g, '').trim();
+      return showCustomAlert(`⚠️ <strong>Movimiento denegado:</strong> Estás intentando registrar ${accionText} de <strong>${cantVal}</strong> unidad(es) de <strong>${prodClean}</strong>, pero el stock actual disponible es únicamente de <strong>${stockDisp}</strong> unidad(es).`, '🚨 Stock Insuficiente', true);
     }
   }
   
@@ -6541,6 +7079,11 @@ window.guardarMovimiento = function(e) {
     // Si es Falla/Merma, saltar la firma digital
     window.confirmarGuardado(false, true);
   } else {
+    const btn = document.getElementById('btn-save');
+    if (btn) { btn.disabled = false; btn.textContent = 'Guardar Movimiento'; }
+    const btnFirmar = document.getElementById('btn-firmar');
+    if (btnFirmar) { btnFirmar.disabled = false; btnFirmar.textContent = 'Firmar'; }
+
     document.getElementById('m-pin').value = '';
     document.getElementById('pin-qty').value = document.getElementById('m-cantidad').value;
     document.getElementById('pin-qty-wrapper').style.display = 'none';
@@ -6552,6 +7095,10 @@ window.guardarMovimiento = function(e) {
 
 window.cancelarPin = function() {
   document.getElementById('modal-pin').classList.remove('open');
+  const btn = document.getElementById('btn-save');
+  if (btn) { btn.disabled = false; btn.textContent = 'Guardar Movimiento'; }
+  const btnFirmar = document.getElementById('btn-firmar');
+  if (btnFirmar) { btnFirmar.disabled = false; btnFirmar.textContent = 'Firmar'; }
 };
 
 window.confirmarGuardado = function(force = false, bypassPin = false) {
@@ -6614,7 +7161,6 @@ window.confirmarGuardado = function(force = false, bypassPin = false) {
   if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
   const btnFirmar = document.getElementById('btn-firmar');
   if (btnFirmar) {
-      if (btnFirmar.disabled) return; // Evitar doble submit si ya está procesando
       btnFirmar.disabled = true;
       btnFirmar.textContent = 'Procesando...';
   }
@@ -6664,6 +7210,19 @@ window.confirmarGuardado = function(force = false, bypassPin = false) {
   const areaVal = document.getElementById('m-area').value;
   let obsFinal = document.getElementById('m-observacion').value.trim();
 
+  // ESCUDO DE VALIDACIÓN DE STOCK DISPONIBLE ANTES DE GUARDAR
+  if (tipoVal === 'Salida' || tipoVal === 'Descarte' || tipoVal === 'Devolucion') {
+    const stockDisp = window.obtenerStockActualProducto(nombreF, document.getElementById('m-codigo').value);
+    if (cantidadRaw > stockDisp) {
+      if (btnFirmar) { btnFirmar.disabled = false; btnFirmar.textContent = 'Firmar'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Guardar Movimiento'; }
+      document.getElementById('modal-pin').classList.remove('open');
+      let accionText = (tipoVal === 'Descarte') ? 'la Falla/Merma' : (tipoVal === 'Devolucion' ? 'la devolución' : 'la salida');
+      let prodClean = nombreF.replace(/\[.*?\]/g, '').trim();
+      return showCustomAlert(`⚠️ <strong>Movimiento denegado:</strong> Estás intentando registrar ${accionText} de <strong>${cantidadRaw}</strong> unidad(es) de <strong>${prodClean}</strong>, pero el stock actual disponible es únicamente de <strong>${stockDisp}</strong> unidad(es).`, '🚨 Stock Insuficiente', true);
+    }
+  }
+
   const isEmergency = areaVal.toUpperCase().includes('EMERGENCIA') || obsFinal.toUpperCase().includes('EMERGENCIA');
 
   if (tipoVal === 'Salida' && isEmergency) {
@@ -6679,7 +7238,7 @@ window.confirmarGuardado = function(force = false, bypassPin = false) {
     fecha: document.getElementById('m-fecha').value,
     hora: document.getElementById('m-hora').value,
     tipo: tipoVal,
-    codigo: document.getElementById('m-codigo').value,
+    codigo: (document.getElementById('m-codigo').value.trim() === 'S/C' ? '' : document.getElementById('m-codigo').value.trim()),
     nombre: nombreF,
     tipo2: document.getElementById('m-tipo2').value,
     lote: loteFefo,
@@ -6753,7 +7312,7 @@ window.exportKardexCSV = function() {
     <td style="border:1px solid #000;">${r.lote || ''}</td>
     <td style="border:1px solid #000; text-align:center;">${r.entrada || ((r.tipo === 'Entrada' || r.tipo === 'Prestamo') ? (r.cantidad || '') : '')}</td>
     <td style="border:1px solid #000; text-align:center;">${r.salida || ((r.tipo === 'Salida' || r.tipo === 'Devolucion' || r.tipo === 'Descarte') ? (r.cantidad || '') : '')}</td>
-    <td style="border:1px solid #000; text-align:center; font-weight:bold;">${r.saldo_calculado !== undefined ? r.saldo_calculado : (r.saldo !== null && r.saldo !== undefined ? r.saldo : '')}</td>
+    <td style="border:1px solid #000; text-align:center; font-weight:bold;">${(r.saldo !== null && r.saldo !== undefined && r.saldo !== '') ? r.saldo : ''}</td>
     <td style="border:1px solid #000;">${r.usuario || ''}</td>
     <td style="border:1px solid #000;">${r.observacion || ''}</td>
     <td style="border:1px solid #000;">${r.area || ''}</td>
@@ -7022,20 +7581,378 @@ if(ctxCatBar) {
   });
 }
 
+// CATÁLOGO OFICIAL DE CÓDIGOS (MATERIALES DE ESCRITORIO)
+window.CODIGOS_OFICIALES_ESCRITORIO = {
+  "BOLIGRAFO - AZUL": "716000010208",
+  "BOLIGRAFO - ROJO": "716000010187",
+  "BOLIGRAFO - NEGRO": "716000010209",
+  "PAPEL BOND 80G": "717200050224",
+  "LIBRO ACTAS -DE 200H.": "717200140150",
+  "LIBRO ACTAS -DE 400H.": "717200140151",
+  "CLIP DE METAL": "718500050032",
+  "GRAPA 26 X 6": "718500080026",
+  "ACOFASTER": "718500100017",
+  "LIGA DE JEBE": "718500110025",
+  "CINTA - CHICA": "710300010048",
+  "CINTA - AMBALAJE": "710300010026",
+  "GOMA BARRA": "710300060058",
+  "ARCHIVADORES PALANCA": "710600010076",
+  "CORRECTOR": "711100030001",
+  "ENGRAPADOR DE METAL": "715000110033",
+  "REGLA PLASTICA": "715000190001",
+  "ESPONJERO": "715000240003",
+  "LAPIZ NEGRO": "716000040045",
+  "PLUMON -GRUESO-NEGRO IND.": "716000060375",
+  "PLUMON -ACR.GRUESO-ROJO": "716000060405",
+  "PLUMON -ACR.GRUESO-AZUL": "716000060421",
+  "PLUMON -ACR.GRUESO-NEGRO": "716000060423",
+  "PLUMON -ACR.GRUESO-VERDE": "716000060424",
+  "TAMPON-CUBIERTA-ROJO": "716000090046",
+  "TAMPON-CUBIERTA-AZUL": "716000090048",
+  "TINTA PARA TAMPON-ROJO": "716000160015",
+  "RESALTADOR": "716000060482"
+};
+
+window.PRODUCTOS_OFICIALES_COMPLETOS = [
+  // MATERIAL DE ESCRITORIO
+  { nombre: "BOLIGRAFO - AZUL", codigo: "716000010208", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "BOLIGRAFO - ROJO", codigo: "716000010187", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "BOLIGRAFO - NEGRO", codigo: "716000010209", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "PAPEL BOND 80G", codigo: "717200050224", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "LIBRO ACTAS -DE 200H.", codigo: "717200140150", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "LIBRO ACTAS -DE 400H.", codigo: "717200140151", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "CLIP DE METAL", codigo: "718500050032", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "GRAPA 26 X 6", codigo: "718500080026", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "ACOFASTER", codigo: "718500100017", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "LIGA DE JEBE", codigo: "718500110025", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "CINTA - CHICA", codigo: "710300010048", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "CINTA - AMBALAJE", codigo: "710300010026", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "GOMA BARRA", codigo: "710300060058", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "ARCHIVADORES PALANCA", codigo: "710600010076", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "CORRECTOR", codigo: "711100030001", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "ENGRAPADOR DE METAL", codigo: "715000110033", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "REGLA PLASTICA", codigo: "715000190001", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "ESPONJERO", codigo: "715000240003", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "LAPIZ NEGRO", codigo: "716000040045", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "PLUMON -GRUESO-NEGRO IND.", codigo: "716000060375", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "PLUMON -ACR.GRUESO-ROJO", codigo: "716000060405", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "PLUMON -ACR.GRUESO-AZUL", codigo: "716000060421", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "PLUMON -ACR.GRUESO-NEGRO", codigo: "716000060423", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "PLUMON -ACR.GRUESO-VERDE", codigo: "716000060424", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "TAMPON-CUBIERTA-ROJO", codigo: "716000090046", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "TAMPON-CUBIERTA-AZUL", codigo: "716000090048", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "TINTA PARA TAMPON-ROJO", codigo: "716000160015", tipo2: "MATERIAL DE ESCRITORIO" },
+  { nombre: "RESALTADOR", codigo: "716000060482", tipo2: "MATERIAL DE ESCRITORIO" },
+
+  // MATERIAL DE LABORATORIO Y TUBOS
+  { nombre: "TUBO DE PLASTICO CON EDTA X 2ML", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TUBO DE PLASTICO CON EDTA X 4ML", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TUBO VACUTAINER CON EDTA K2 4ML", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TUBO VACUTAINER CON EDTA K3 3ML", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TUBO VACUTAINER TAPA ROJA (ACTIVADOR DE COÁGULO)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TUBO VACUTAINER TAPA AMARILLA (GEL SEPARADOR)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TUBO VACUTAINER TAPA CELESTE (CITRATO DE SODIO 3.2%)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TUBO VACUTAINER TAPA VERDE (HEPARINA DE SODIO)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TUBO VACUTAINER TAPA GRIS (FLUORURO DE SODIO)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TUBO DE VIDRIO BIOQUÍMICA", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TUBO DE VIDRIO INMUNOLOGÍA", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TUBO MICROTAINER CON EDTA X 0.5ML", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "AGUJAS DESCARTABLES 20 X 1", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "AGUJAS VACUTAINER 21 X 1/2", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "ALITAS VACUTAINER SAFETY-LOK 23 X 3/4", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "GASA FRACCIONADA ESTERIL 5X5 cm", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "ALGODÓN x 500 GR", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "ESPARADRAPO", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "BOLSAS COLECTORA PARA ORINA 50 ML", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "ALCOHOL ETILICO 70%", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "CATETER INTRAVENOSO 22G", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "CATETER INTRAVENOSO 24G", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "JERINGA 3 ML CON AGUJA", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "JERINGA 5 ML CON AGUJA", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "JERINGA 10 ML CON AGUJA", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "JERINGA 20 ML", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "GUANTES EXAMEN DE NITRILO TALLA L", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "GUANTES EXAMEN DE NITRILO TALLA M", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "GUANTES EXAMEN DE NITRILO TALLA S", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "MASCARILLA QUIRÚRGICA 3 PLIEGUES", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "MASCARILLA N95 / KN95", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "MANDILÓN DESCARTABLE ESTÉRIL", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "GORRO ORTOPÉDICO DESCARTABLE", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "CUBRECALZADO DESCARTABLE", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "BOQUILLAS PARA ESPIRÓMETRO", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "PUNTERAS PARA PIPETA AZUL (1000 UL)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "PUNTERAS PARA PIPETA AMARILLA (200 UL)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "PUNTERAS PARA PIPETA BLANCA (10 UL)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "LÁMINAS PORTAOBJETOS 26X76 MM", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "LAMINILLAS CUBREOBJETOS 22X22 MM", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TIRA REACTIVA PARA UROANÁLISIS", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "REACTIVO PARA BIOQUÍMICA GLUCOSA", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "REACTIVO PARA BIOQUÍMICA UREA", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "REACTIVO PARA BIOQUÍMICA CREATININA", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+
+  // MATERIAL DE LIMPIEZA
+  { nombre: "JABÓN LÍQUIDO GERMICIDA", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
+  { nombre: "ALCOHOL EN GEL 70% CON DOSIFICADOR", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
+  { nombre: "LEJÍA / HIPOCLORITO DE SODIO 5%", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
+  { nombre: "DETERGENTE EN POLWO MULTIUSO", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
+  { nombre: "DETERGENTE ENZIMÁTICO PARA INSTRUMENTAL", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
+  { nombre: "PAPEL HIGIÉNICO ROLLO INSTITUCIONAL", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
+  { nombre: "PAPEL TOALLA INTERFOLIADO", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
+  { nombre: "BOLSA DE BASURA ROJA (BIOCONTAMINADO)", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
+  { nombre: "BOLSA DE BASURA NEGRA (RESIDUOS COMUNES)", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
+  { nombre: "BOLSA DE BASURA AMARILLA (ESPECIALES)", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
+  { nombre: "PAÑO DE MICROFIBRA MULTIUSO", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
+  { nombre: "ESPONJA DE LIMPIEZA SINTÉTICA", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
+  { nombre: "GUANTES DE JEBE MULTIUSO TALLA L", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
+  { nombre: "GUANTES DE JEBE MULTIUSO TALLA M", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
+  { nombre: "DESINFECTANTE DE SUPERFICIES AMONIO CUATERNARIO", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" }
+];
+
+window.vaciarInventarioConfirmado = function() {
+  if (!confirm("⚠️ ¿Estás seguro de que deseas VACIAR TODO el inventario antiguo? Esta acción borrará las filas antiguas de tu hoja de Google Sheets para dejarla limpia para los productos oficiales.")) return;
+  
+  const statusDiv = document.getElementById('import-excel-status');
+  if (statusDiv) statusDiv.textContent = 'Vaciando inventario en Google Sheets...';
+
+  if (typeof google !== 'undefined' && google.script) {
+    google.script.run.withSuccessHandler(function(res) {
+      showCustomAlert('Inventario antiguo vaciado. Tu sistema y Google Sheets están 100% limpios.', 'Limpieza Completa');
+      if (statusDiv) statusDiv.textContent = '🧹 Inventario vaciado correctamente.';
+      google.script.run.withSuccessHandler(d => { window.KARDEX_DATA = d; if(window.renderTable) window.renderTable(); }).getKardexData();
+    }).withFailureHandler(function(err) {
+      showCustomAlert('Error al vaciar: ' + err, 'Error', true);
+      if (statusDiv) statusDiv.textContent = '❌ Error al vaciar.';
+    }).vaciarInventarioSheets();
+  } else {
+    showCustomAlert('Modo local de prueba. Inventario reseteado.', 'Prueba Local');
+    window.KARDEX_DATA = [];
+    if (window.renderTable) window.renderTable();
+    if (statusDiv) statusDiv.textContent = '🧹 Inventario vaciado (Modo Local).';
+  }
+};
+
+window.aplicarFormatoEleganteSheets = function() {
+  if (typeof google !== 'undefined' && google.script) {
+    google.script.run.withSuccessHandler(function(res) {
+      showCustomAlert('¡Tu hoja de Google Sheets ha sido formateada con estilo elegante y profesional!', 'Diseño Aplicado');
+    }).darFormatoEleganteAGoogleSheets();
+  } else {
+    showCustomAlert('Modo prueba local. En Google Apps Script esto aplicará encabezados azul marino (#0f172a), texto cian (#38bdf8) y formatos alineados a tu hoja.', 'Prueba Local');
+  }
+};
+
+window.poblarDirectoServidor = function() {
+  const statusDiv = document.getElementById('import-excel-status');
+  if (statusDiv) statusDiv.textContent = 'Poblando Google Sheets con catálogo oficial...';
+  
+  if (typeof google !== 'undefined' && google.script) {
+    google.script.run.withSuccessHandler(function(res) {
+      showCustomAlert('¡Tu Google Sheets ha sido poblado directamente con los productos y códigos oficiales!', 'Éxito Absoluto');
+      if (statusDiv) statusDiv.textContent = '⚡ ' + res.count + ' productos oficiales cargados.';
+      google.script.run.withSuccessHandler(d => { window.KARDEX_DATA = d; if(window.renderTable) window.renderTable(); }).getKardexData();
+    }).withFailureHandler(function(err) {
+      showCustomAlert('Error al poblar: ' + err, 'Error', true);
+      if (statusDiv) statusDiv.textContent = '❌ Error al poblar.';
+    }).poblarGoogleSheetsOficialDirecto();
+  } else {
+    showCustomAlert('Modo prueba local. En Google Apps Script esto reiniciará la hoja de Google Sheets y colocará el catálogo oficial con sus códigos de 12 dígitos.', 'Prueba Local');
+  }
+};
+
+window.esNombreDeProductoValido = function(val) {
+  if (!val || typeof val !== 'string') return false;
+  const str = val.trim();
+  if (str.length < 3) return false;
+  
+  // Si es número puro o fecha
+  if (!isNaN(str) || /^\d+$/.test(str)) return false;
+  if (/^\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}$/.test(str)) return false;
+  if (/^\d{1,2}\s+de\s+[a-z]+\s+del?\s+\d{4}$/i.test(str)) return false;
+  if (/^[a-z]+\s+\d{4}$/i.test(str)) return false; // ej: enero 2026
+
+  const norm = str.normalize('NFD').replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
+
+  // Excluir encabezados y metadatos del reporte Excel
+  const prohibidos = [
+    "INSTITUTO", "SALUD DEL NINO", "DEPARTAMENTO", "SERVICIO", "FARMACIA", "ALMACEN",
+    "PAGINA", "MES:", "MES", "FFXP", "INGRESO", "SALDO", "UNIDADES", "UNIDAD",
+    "CODIGO", "ARTICULO", "DESCRIPCION", "OBSERVAC", "TOTAL", "CONSUMO", "REPORTE",
+    "KARDEX", "CONCEPTO", "PREVENTIVO", "SALIDA", "ENTRADA", "STOCK", "PRESENTACION",
+    "VENCE", "VENCIMIENTO", "FECHA", "LOTE", "MARCA"
+  ];
+
+  for (let p of prohibidos) {
+    if (norm === p || norm.startsWith("INSTITUTO") || norm.startsWith("MES:") || norm.startsWith("31 DE") || norm.startsWith("30 DE")) {
+      return false;
+    }
+  }
+
+  // Excluir presentaciones puras que vienen sueltas en una celda
+  if (norm === "UNIDAD" || norm === "UNIDADES" || norm === "CAJA" || /^CAJA\s+X/i.test(norm)) {
+    return false;
+  }
+
+  return true;
+};
+
+window.procesarExcelOficialCompleto = function(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const limpiarAntiguo = document.getElementById('chk-limpiar-antiguo') ? document.getElementById('chk-limpiar-antiguo').checked : false;
+
+  const btn = document.getElementById('btn-sync-sheets');
+  const statusDiv = document.getElementById('import-excel-status');
+  if (btn) { btn.disabled = true; btn.textContent = 'Leyendo Excel...'; }
+  if (statusDiv) statusDiv.textContent = 'Analizando y filtrando productos del Excel...';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      
+      let productosProcesados = [];
+      let nombresMap = new Set();
+      let countEscritorio = 0;
+      let countDemas = 0;
+
+      workbook.SheetNames.forEach(sheetName => {
+        const sheet = workbook.Sheets[sheetName];
+        const jsonRows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        
+        jsonRows.forEach(row => {
+          if (!row || !Array.isArray(row) || row.length === 0) return;
+          row.forEach(cell => {
+            const val = String(cell || '').trim();
+            if (window.esNombreDeProductoValido(val)) {
+              const normVal = String(val).normalize('NFD').replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
+              
+              if (!nombresMap.has(normVal)) {
+                nombresMap.add(normVal);
+                
+                const codOficial = window.obtenerCodigoOficial(val);
+                let tipo2 = "MATERIAL DE LABORATORIO";
+                let codigo = "";
+
+                if (codOficial) {
+                  codigo = codOficial;
+                  tipo2 = "MATERIAL DE ESCRITORIO";
+                  countEscritorio++;
+                } else {
+                  countDemas++;
+                }
+
+                productosProcesados.push({
+                  nombre: val,
+                  codigo: codigo,
+                  tipo2: tipo2,
+                  stockInicial: 0
+                });
+              }
+            }
+          });
+        });
+      });
+
+      if (statusDiv) statusDiv.textContent = `Enviando ${productosProcesados.length} productos a Google Sheets (${countEscritorio} útiles con código, ${countDemas} otros sin código)...`;
+
+      if (typeof google !== 'undefined' && google.script) {
+        google.script.run.withSuccessHandler(function(res) {
+          if (btn) { btn.disabled = false; btn.textContent = '📂 Cargar CONSUMO ATM MAYO 2026.xlsx'; }
+          if (res && res.success) {
+            showCustomAlert('¡Excelente! Se sincronizaron ' + res.insertados + ' productos oficiales en tu Google Sheets y Dashboard.', 'Carga Completa');
+            if (statusDiv) statusDiv.textContent = '✅ ' + res.insertados + ' productos cargados.';
+            google.script.run.withSuccessHandler(d => { window.KARDEX_DATA = d; if(window.renderTable) window.renderTable(); }).getKardexData();
+          } else {
+            showCustomAlert('Error al importar: ' + (res ? res.error : 'Sin respuesta'), 'Error', true);
+            if (statusDiv) statusDiv.textContent = '❌ Error guardando productos.';
+          }
+        }).withFailureHandler(function(err) {
+          if (btn) { btn.disabled = false; btn.textContent = '📂 Cargar CONSUMO ATM MAYO 2026.xlsx'; }
+          showCustomAlert('Error de conexión: ' + err, 'Error', true);
+          if (statusDiv) statusDiv.textContent = '❌ Error de red.';
+        }).cargarProductosMasivos(productosProcesados, limpiarAntiguo);
+      } else {
+        if (btn) { btn.disabled = false; btn.textContent = '📂 Cargar CONSUMO ATM MAYO 2026.xlsx'; }
+        showCustomAlert(`Se procesaron ${productosProcesados.length} productos (${countEscritorio} útiles con código, ${countDemas} sin código).`, 'Carga Local');
+        if (statusDiv) statusDiv.textContent = `✅ ${productosProcesados.length} productos listos (Modo Prueba).`;
+      }
+    } catch(err) {
+      if (btn) { btn.disabled = false; btn.textContent = '📂 Cargar CONSUMO ATM MAYO 2026.xlsx'; }
+      showCustomAlert('Error al procesar el Excel: ' + err.message, 'Error Excel', true);
+      if (statusDiv) statusDiv.textContent = '❌ Error leyendo Excel.';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+};
+
+window.obtenerCodigoOficial = function(nombre) {
+  if (!nombre) return "";
+  const norm = String(nombre).normalize('NFD').replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
+  for (let k in window.CODIGOS_OFICIALES_ESCRITORIO) {
+    const kNorm = String(k).normalize('NFD').replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
+    if (kNorm === norm) {
+      return window.CODIGOS_OFICIALES_ESCRITORIO[k];
+    }
+  }
+  return ""; // Para todo lo demás, sin código como pidió el usuario
+};
+
+window.cargarOficialesAGoogleSheets = function() {
+  const btn = document.getElementById('btn-sync-sheets');
+  if (btn) { btn.disabled = true; btn.textContent = 'Enviando a Google Sheets...'; }
+  
+  if (typeof google !== 'undefined' && google.script) {
+    google.script.run.withSuccessHandler(function(res) {
+      if (btn) { btn.disabled = false; btn.textContent = '📥 Importar 28 Productos a Google Sheets'; }
+      if (res && res.success) {
+        showCustomAlert('¡Se registraron ' + res.insertados + ' productos de escritorio en tu Google Sheets!', 'Éxito Absoluto');
+        google.script.run.withSuccessHandler(d => { window.KARDEX_DATA = d; if(window.renderTable) window.renderTable(); }).getKardexData();
+      } else {
+        showCustomAlert('Error al importar: ' + (res ? res.error : 'Respuesta nula'), 'Error', true);
+      }
+    }).withFailureHandler(function(err) {
+      if (btn) { btn.disabled = false; btn.textContent = '📥 Importar 28 Productos a Google Sheets'; }
+      showCustomAlert('Error de conexión: ' + err, 'Error', true);
+    }).inicializarProductosOficialesEnSheets();
+  } else {
+    if (btn) { btn.disabled = false; btn.textContent = '📥 Importar 28 Productos a Google Sheets'; }
+    showCustomAlert('Modo local de prueba. En Google Apps Script esto escribirá directamente en la pestaña Inventario de tu Google Sheet.', 'Aviso');
+  }
+};
+
 // AUTOCOMPLETADO INTELIGENTE
 window.fillDatalist = function() {
   const datalistCod = document.getElementById('datalist-codigos');
   const datalistNom = document.getElementById('datalist-nombres');
   if(datalistCod) {
-    // Excluir código S/C para contingencia
-    const unicosCod = [...new Set(KARDEX_DATA.filter(r => r.codigo !== 'S/C' && !String(r.nombre).toUpperCase().includes('TUBO DE VIDRIO')).map(r => r.codigo).filter(c => c))];
+    const unicosCod = [...new Set([
+      ...Object.values(window.CODIGOS_OFICIALES_ESCRITORIO),
+      ...KARDEX_DATA.filter(r => r.codigo && r.codigo !== 'S/C').map(r => r.codigo)
+    ])];
     datalistCod.innerHTML = unicosCod.map(c => `<option value="${c}">`).join('');
   }
   if(datalistNom) {
-    const unicosNom = [...new Set(KARDEX_DATA.filter(r => !String(r.nombre).toUpperCase().includes('TUBO DE VIDRIO')).map(r => {
-      let n = r.nombre || '';
-      return n.replace(/\[.*?\]/g, '').trim();
-    }).filter(n => n))];
+    // Normalizar nombres para deduplicar variaciones como "TUBO" vs "TUBOS"
+    const normN = (s) => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/\[.*?\]/g,'').trim().toUpperCase().replace(/\s+/g,' ')
+      .replace(/\bTUBOS\b/g,'TUBO').replace(/\bFRASCOS\b/g,'FRASCO');
+    const mapaDedup = {}; // clave normalizada → nombre preferido (el más reciente/limpio)
+    // Primero cargar nombres del catálogo oficial
+    Object.keys(window.CODIGOS_OFICIALES_ESCRITORIO).forEach(n => {
+      if(n) mapaDedup[normN(n)] = n.replace(/\[.*?\]/g,'').trim();
+    });
+    // Luego los del historial (el más reciente gana si hay conflicto)
+    KARDEX_DATA.forEach(r => {
+      let n = (r.nombre || '').replace(/\[.*?\]/g,'').trim();
+      if(n) {
+        const k = normN(n);
+        // Preferir el nombre más corto (sin la S extra) si ya existe uno normalizado igual
+        if(!mapaDedup[k] || n.length < mapaDedup[k].length) mapaDedup[k] = n;
+      }
+    });
+    const unicosNom = Object.values(mapaDedup).sort();
     datalistNom.innerHTML = unicosNom.map(n => `<option value="${n}">`).join('');
   }
 };
@@ -7046,24 +7963,41 @@ window.triggerAutocomplete = function(sourceId) {
   const tipoMov = document.getElementById('m-tipo').value;
   const isSalida = (tipoMov === 'Salida' || tipoMov === 'Ajuste' || tipoMov === 'Descarte');
   
+  // Auto-completado por Catálogo Oficial de Escritorio o DB
+  if (sourceId === 'm-nombre') {
+    const codOficial = window.obtenerCodigoOficial(val);
+    if (codOficial) {
+      document.getElementById('m-codigo').value = codOficial;
+      document.getElementById('m-tipo2').value = 'MATERIAL DE ESCRITORIO';
+    } else {
+      document.getElementById('m-codigo').value = 'S/C';
+    }
+  }
+
   // Limpiar restricciones de cantidad por defecto
   const mCantidad = document.getElementById('m-cantidad');
   mCantidad.removeAttribute('max');
   mCantidad.placeholder = '0.00';
   document.getElementById('m-lote').placeholder = '';
 
+  // Función de normalización para comparación flexible (incluye plural→singular)
+  const normStr = (s) => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/\[.*?\]/g,'').trim().toLowerCase().replace(/\s+/g,' ')
+    .replace(/\btubos\b/g,'tubo').replace(/\bfrascos\b/g,'frasco');
+
   let registrosEncontrados = [];
   for (let i = KARDEX_DATA.length - 1; i >= 0; i--) {
     let r = KARDEX_DATA[i];
     if (r.observacion && String(r.observacion).includes('[ANULADO]')) continue;
-    let rNom = (r.nombre || '').replace(/\[.*?\]/g, '').trim().toLowerCase();
+    let rNom = normStr(r.nombre);
     let rCod = (r.codigo || '').toLowerCase();
-    if((sourceId === 'm-codigo' && rCod === val) || (sourceId === 'm-nombre' && rNom === val)) {
+    if((sourceId === 'm-codigo' && rCod === val) || (sourceId === 'm-nombre' && rNom === normStr(val))) {
       registrosEncontrados.push(r);
     }
   }
-  
+
   if(registrosEncontrados.length === 0) return;
+
 
   // Encontrar el registro más frecuente para evitar arrastrar errores tipográficos
   let counts = {};
@@ -7079,10 +8013,22 @@ window.triggerAutocomplete = function(sourceId) {
      }
   });
   
-  const codReal = registro.codigo;
+  // Filtrar solo códigos numéricos reales (mínimo 8 dígitos) de la BD para ignorar letras de prueba como "D"
+  let codReal = '';
+  if (registro && registro.codigo && String(registro.codigo).trim().length >= 8 && /^\d+$/.test(String(registro.codigo).trim())) {
+    codReal = String(registro.codigo).trim();
+  }
+
+  // Nombre normalizado del producto seleccionado (disponible para ambos bloques Salida y Entrada)
+  const nombreSeleccionado = normStr(registro.nombre || '');
   
+
   // Llenar cruzado
-  if(sourceId === 'm-nombre') document.getElementById('m-codigo').value = codReal;
+  if(sourceId === 'm-nombre') {
+    const codOficial = window.obtenerCodigoOficial(registro.nombre);
+    const finalCod = codOficial || codReal;
+    document.getElementById('m-codigo').value = finalCod ? finalCod : 'S/C';
+  }
   if(sourceId === 'm-codigo') {
     let n = registro.nombre || '';
     document.getElementById('m-nombre').value = n.replace(/\[.*?\]/g, '').trim();
@@ -7119,9 +8065,14 @@ window.triggerAutocomplete = function(sourceId) {
   // Si es salida o ajuste, buscar el lote más antiguo (FEFO) con stock > 0
   if(isSalida) {
     // Función para extraer clave de lote normalizada (solo el número, sin Marca/Vence)
-    const normLoteKey = (str) => String(str || '').split('|')[0].toLowerCase().replace(/[^a-z0-9]/g, '') || 'sinlote';
+    const normLoteKey = (str) => String(str || '').split('|')[0].toLowerCase().replace(/[^a-z0-9]/g, '').replace(/^lote/, '') || 'sinlote';
     const lotes = {}; // clave normalizada -> { stock, loteOriginal }
-    KARDEX_DATA.filter(r => r.codigo === codReal && (!r.observacion || !String(r.observacion).includes('[ANULADO]'))).forEach(r => {
+    KARDEX_DATA.filter(r => {
+      if (r.observacion && String(r.observacion).includes('[ANULADO]')) return false;
+      if (r.tipo === 'Ajuste (Anulación)') return false;
+      if (codReal) return String(r.codigo).trim() === codReal;
+      return normStr(r.nombre || '') === nombreSeleccionado;
+    }).forEach(r => {
       const lKey = normLoteKey(r.lote);
       if(!lotes[lKey]) lotes[lKey] = { stock: 0, loteOriginal: r.lote || '', vence: '' };
       if(r.tipo === 'Entrada' || r.tipo === 'Prestamo') lotes[lKey].stock += Number(r.entrada||0);
@@ -7223,7 +8174,12 @@ window.triggerAutocomplete = function(sourceId) {
     // Generar datalist para Entradas también, pero mostrando Fecha en vez de Stock
     const normLoteKey = (str) => String(str || '').split('|')[0].trim();
     const lotesHist = {};
-    KARDEX_DATA.filter(r => r.codigo === codReal && (!r.observacion || !String(r.observacion).includes('[ANULADO]'))).forEach(r => {
+    KARDEX_DATA.filter(r => {
+      if (r.observacion && String(r.observacion).includes('[ANULADO]')) return false;
+      if (codReal) return String(r.codigo).trim() === codReal;
+      return normStr(r.nombre || '') === nombreSeleccionado;
+
+    }).forEach(r => {
       const lKey = normLoteKey(r.lote);
       if (lKey && lKey.toLowerCase() !== 'sinlote' && lKey.toLowerCase() !== 's/l') {
         if ((r.lote || '').includes('|') || !lotesHist[lKey]) lotesHist[lKey] = r.lote || '';
@@ -7245,11 +8201,29 @@ window.triggerAutocomplete = function(sourceId) {
 
 function handleLoteAutoFill() {
   const val = this.value.trim().toLowerCase();
-  const codReal = document.getElementById('m-codigo').value;
-  if (!val || !codReal) return;
+  const codRaw = document.getElementById('m-codigo').value;
+  const nomRaw = document.getElementById('m-nombre').value;
+  if (!val) return;
+  
+  let codReal = '';
+  if (codRaw && String(codRaw).trim().length >= 8 && /^\d+$/.test(String(codRaw).trim())) {
+    codReal = String(codRaw).trim();
+  }
+  
+  const normStr = (s) => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/\[.*?\]/g,'').trim().toLowerCase().replace(/\s+/g,' ')
+    .replace(/\btubos\b/g,'tubo').replace(/\bfrascos\b/g,'frasco');
+  const nombreSeleccionado = normStr(nomRaw);
   
   const normLoteKey = (str) => String(str || '').split('|')[0].toLowerCase().trim();
-  const match = KARDEX_DATA.find(r => r.codigo === codReal && r.lote && r.lote.includes('Vence:') && normLoteKey(r.lote) === val);
+  const match = KARDEX_DATA.find(r => {
+      if (r.observacion && String(r.observacion).includes('[ANULADO]')) return false;
+      if (r.tipo === 'Ajuste (Anulación)') return false;
+      if (!r.lote || !r.lote.includes('Vence:')) return false;
+      if (normLoteKey(r.lote) !== val) return false;
+      if (codReal) return String(r.codigo).trim() === codReal;
+      return normStr(r.nombre || '') === nombreSeleccionado;
+  });
   
   if (match) {
       const pVence = match.lote.split('|').find(p => p.includes('Vence:'));
@@ -7404,8 +8378,11 @@ window.cargarUsuariosConfig = function() {
   
   if (typeof google !== 'undefined' && google.script) {
     google.script.run.withSuccessHandler(function(res) {
-      usuariosConfig = res;
+      usuariosConfig = res || [];
+      window.ALL_USERS = res || [];
       renderUsuarios();
+      const tipoVal = document.getElementById('m-tipo') ? document.getElementById('m-tipo').value : 'Entrada';
+      if(window.filterUsuariosDropdown) window.filterUsuariosDropdown(tipoVal);
     }).getUsuariosConfig();
   } else {
     // Modo de prueba local
@@ -7413,7 +8390,9 @@ window.cargarUsuariosConfig = function() {
       { nombre: 'Ing. Christian Ramos', correo: 'vcramosroq245@gmail.com', rol: 'Administrador' },
       { nombre: 'Personal de Almacén', correo: 'almacen@hospital.com', rol: 'Personal de Almacén' }
     ];
+    window.ALL_USERS = usuariosConfig;
     renderUsuarios();
+    if(window.filterUsuariosDropdown) window.filterUsuariosDropdown('Entrada');
   }
 };
 
@@ -7500,7 +8479,14 @@ window.guardarUsuarioConfig = function() {
       }).agregarUsuarioConfig(nombre, pin, correo, rol);
     }
   } else {
-    showCustomAlert("Guardado simulado (modo local)", "Éxito");
+    showCustomAlert("Perfil guardado exitosamente", "Éxito");
+    if (!window.ALL_USERS) window.ALL_USERS = [];
+    if (!window.ALL_USERS.some(u => u && u.nombre === nombre)) window.ALL_USERS.push({ nombre: nombre, rol: rol });
+    if (!usuariosConfig) usuariosConfig = [];
+    if (!usuariosConfig.some(u => u && u.nombre === nombre)) usuariosConfig.push({ nombre: nombre, correo: correo, rol: rol });
+    renderUsuarios();
+    const tipoVal = document.getElementById('m-tipo') ? document.getElementById('m-tipo').value : 'Entrada';
+    if(window.filterUsuariosDropdown) window.filterUsuariosDropdown(tipoVal);
   }
 };
 
@@ -7818,7 +8804,7 @@ window.addEventListener('load', function() {
 
       <div class="form-group" style="margin-bottom: 15px;">
         <label>TUBO / PRODUCTO</label>
-        <input type="text" id="cierre-producto" class="form-control" list="datalist-nombres" placeholder="Ingrese o seleccione el nombre" required autocomplete="off" oninput="fillDatalist()" onclick="if(this.value==='') this.select();">
+        <input type="text" id="cierre-producto" class="form-control" list="datalist-nombres" placeholder="Ingrese o seleccione el nombre" required autocomplete="off" onclick="if(this.value==='') this.select();">
       </div>
       <div class="form-group" style="margin-bottom: 15px;">
         <label>SUMA PRODUCTOS DEL STOCK EN USO + MÓDULOS <span class="req">*</span></label>
@@ -7839,7 +8825,7 @@ window.addEventListener('load', function() {
 
 <script>
 window.llenarCierreDatalist = function() {
-  const datalist = document.getElementById('cierre-datalist');
+  const datalist = document.getElementById('datalist-nombres'); // FIXED ID
   if (datalist && window.KARDEX_DATA) {
     const nombresUnicos = new Set();
     window.KARDEX_DATA.forEach(r => {
@@ -7858,123 +8844,279 @@ window.abrirCierreMes = function() {
 };
 
 window.ejecutarCierreMes = function(e) {
-  e.preventDefault();
-  const producto = document.getElementById('cierre-producto').value;
-  const sobrantes = parseInt(document.getElementById('cierre-sobrantes').value) || 0;
-  const pin = document.getElementById('cierre-pin').value;
-  
-  if(!pin || pin.length < 4) return showCustomAlert('Ingrese su PIN de 4 dígitos', 'Firma Inválida', true);
-  
-  const normalizeText = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
-  const prodObj = window.KARDEX_DATA.find(r => normalizeText(r.nombre) === normalizeText(producto));
-  if(!prodObj) return showCustomAlert('Producto no encontrado. Revisa que el nombre esté escrito exactamente igual.', 'Error', true);
-  
-  const btn = document.getElementById('btn-ejecutar-cierre');
-  btn.textContent = 'Procesando...';
-  btn.disabled = true;
-  
-  const now = new Date();
-  const _p = n => String(n).padStart(2,'0');
-  const fecha = `${now.getFullYear()}-${_p(now.getMonth()+1)}-${_p(now.getDate())}`;
-  const hora = now.toTimeString().split(' ')[0].substring(0,5);
-  
-  const baseObj = {
-    fecha: fecha, hora: hora, codigo: prodObj.codigo, nombre: prodObj.nombre,
-    tipo2: prodObj.tipo2 || 'MATERIAL DE LABORATORIO', 
-    comprobante: 'RETORNO-' + _p(now.getMonth()+1), usuario: 'AUTO', pin: pin, area: 'TOMA DE MUESTRA'
-  };
+  try {
+      e.preventDefault();
 
-  // --- LÓGICA DE DISTRIBUCIÓN AUTOMÁTICA DE LOTES (LIFO) ---
-  let lotesModulo = {};
-  window.KARDEX_DATA.forEach(r => {
-      if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
-      if (r.nombre !== producto) return;
-      
-      const esToma = String(r.area||'').toUpperCase().includes('TOMA DE MUESTRA');
-      if (!esToma) return;
-      
-      const tipo = String(r.tipo||'').trim().toLowerCase();
-      const l = r.lote || 'Lote: S/L | Marca: S/M';
-      
-      if (!lotesModulo[l]) lotesModulo[l] = { stock: 0, str: l };
-      
-      if (tipo === 'salida') {
-          lotesModulo[l].stock += Number(r.salida||0);
-      } else if (tipo === 'devolucion' || tipo === 'descarte') {
-          lotesModulo[l].stock -= (Number(r.entrada||0) || Number(r.salida||0));
+      const producto = document.getElementById('cierre-producto').value.trim();
+      const sobrantes = parseInt(document.getElementById('cierre-sobrantes').value) || 0;
+      const pin = document.getElementById('cierre-pin').value.trim();
+
+      // Validaciones básicas
+      if (!producto) {
+          showCustomAlert('Por favor selecciona un Tubo / Producto.', 'Campo requerido', true);
+          return;
       }
-  });
+      if (sobrantes <= 0) {
+          showCustomAlert('La cantidad debe ser mayor a cero.', 'Campo requerido', true);
+          return;
+      }
+      if (!pin || pin.length < 4) {
+          showCustomAlert('Ingrese su PIN de 4 dígitos para firmar.', 'Firma Inválida', true);
+          return;
+      }
+      if (!window.KARDEX_DATA || window.KARDEX_DATA.length === 0) {
+          showCustomAlert('Los datos del Kardex no están cargados. Recarga la página.', 'Error', true);
+          return;
+      }
 
-  let listLotes = Object.values(lotesModulo).filter(x => x.stock > 0);
-  
-  // Ordenar por fecha de vencimiento DESCENDENTE (El más nuevo primero)
-  listLotes.sort((a, b) => {
-      const getExp = (str) => {
-         const pVence = str.split('|').find(p => p.includes('Vence:'));
-         if(!pVence) return 0;
-         const dArr = pVence.replace('Vence:', '').trim().split('/');
-         if(dArr.length === 3) {
-             const yy = dArr[2].length === 2 ? '20'+dArr[2] : dArr[2];
-             return new Date(parseInt(yy), parseInt(dArr[1])-1, parseInt(dArr[0])).getTime();
-         }
-         return 0;
+      const normalizeText = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
+      const prodObj = window.KARDEX_DATA.find(r => normalizeText(r.nombre) === normalizeText(producto));
+      if (!prodObj) {
+          showCustomAlert('Producto no encontrado. Verifica que el nombre esté escrito exactamente igual.', 'Error', true);
+          return;
+      }
+
+      const btn = document.getElementById('btn-ejecutar-cierre');
+      btn.textContent = 'Procesando...';
+      btn.disabled = true;
+
+      const now = new Date();
+      const _p = n => String(n).padStart(2,'0');
+      const fecha = `${now.getFullYear()}-${_p(now.getMonth()+1)}-${_p(now.getDate())}`;
+      const hora = now.toTimeString().split(' ')[0].substring(0,5);
+
+      // Detectar nombre del usuario por PIN
+      let nombreUsuario = 'CIERRE-MES';
+      if (window.usuariosConfig && window.usuariosConfig.length > 0) {
+          function hashPinLocal(p) {
+              let h = 0;
+              for (let i = 0; i < p.length; i++) { h = (Math.imul(31, h) + p.charCodeAt(i)) | 0; }
+              return Math.abs(h).toString(16).padStart(8, '0');
+          }
+          const pinHash = hashPinLocal(pin);
+          const userFound = window.usuariosConfig.find(u => u.pin === pinHash || u.pin === pin);
+          if (!userFound) {
+              showCustomAlert('PIN incorrecto. No se puede firmar este movimiento.', 'Firma Inválida', true);
+              btn.textContent = 'Cerrar Mes Automáticamente';
+              btn.disabled = false;
+              return;
+          }
+          nombreUsuario = userFound.nombre;
+      }
+
+      const baseObj = {
+        fecha: fecha, hora: hora, codigo: prodObj.codigo, nombre: prodObj.nombre,
+        tipo2: prodObj.tipo2 || 'MATERIAL DE LABORATORIO',
+        comprobante: 'RETORNO-' + _p(now.getMonth()+1),
+        usuario: nombreUsuario, pin: pin, area: 'TOMA DE MUESTRA'
       };
-      return getExp(b.str) - getExp(a.str);
-  });
-  
-  // Si por error matemático no hay stock teórico, usamos un genérico
-  if (listLotes.length === 0) {
-      listLotes.push({ stock: Infinity, str: 'Lote: RETORNO MÓDULO | Marca: S/M' });
-  }
 
-  let movimientos = [];
-  let faltan = sobrantes;
-  
-  for (let i = 0; i < listLotes.length; i++) {
-      if (faltan <= 0) break;
-      const lot = listLotes[i];
-      let cantDevolver = (faltan <= lot.stock) ? faltan : lot.stock;
-      
-      if (cantDevolver > 0) {
-          movimientos.push({ ...baseObj, tipo: 'Devolucion', cantidad: cantDevolver, entrada: cantDevolver, salida: '', observacion: 'RETORNO DE STOCK OPERATIVO (CIERRE DE MES)', lote: lot.str });
-          faltan -= cantDevolver;
-      }
-  }
-  
-  // Si aún sobran tubos (están devolviendo más de lo que alguna vez enviaron según el sistema)
-  if (faltan > 0) {
-      movimientos.push({ ...baseObj, tipo: 'Devolucion', cantidad: faltan, entrada: faltan, salida: '', observacion: 'RETORNO DE STOCK OPERATIVO (EXCEDENTE)', lote: listLotes[0].str });
-  }
+      // --- LÓGICA DE DISTRIBUCIÓN AUTOMÁTICA DE LOTES (LIFO) ---
+      let lotesModulo = {};
+      window.KARDEX_DATA.forEach(r => {
+          if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
+          if (normalizeText(r.nombre) !== normalizeText(producto)) return;
 
-  function sendMov(mov) {
-      return new Promise((resolve, reject) => {
-          if (typeof google === 'undefined') { setTimeout(resolve, 500); return; }
-          google.script.run.withSuccessHandler(res => {
-              if(res && !res.success) reject(res.message); else resolve(res);
-          }).withFailureHandler(reject).registrarMovimiento(mov);
+          const esToma = String(r.area||'').toUpperCase().includes('TOMA DE MUESTRA');
+          if (!esToma) return;
+
+          const tipo = String(r.tipo||'').trim().toLowerCase();
+          const l = r.lote || 'Lote: S/L | Marca: S/M';
+
+          if (!lotesModulo[l]) lotesModulo[l] = { stock: 0, str: l };
+
+          if (tipo === 'salida') {
+              lotesModulo[l].stock += Number(r.salida||0);
+          } else if (tipo === 'devolucion' || tipo === 'descarte') {
+              lotesModulo[l].stock -= (Number(r.entrada||0) || Number(r.salida||0));
+          }
       });
-  }
-  
-  async function procesar() {
-      try {
-          for (let m of movimientos) {
-              await sendMov(m);
-          }
-          
-          showCustomAlert('El Retorno de Mes se registró correctamente. Los tubos han vuelto a tu stock principal respetando los lotes originales.', 'Éxito Absoluto');
-          document.getElementById('modal-cierre-mes').classList.remove('open');
-          
-          if (typeof google !== 'undefined') {
-              google.script.run.withSuccessHandler(d => { window.KARDEX_DATA = d; if(window.renderTable) window.renderTable(); }).getKardexData();
-          }
-      } catch(err) {
-          showCustomAlert('Error guardando el retorno: ' + err, 'Error de Conexión', true);
-      } finally {
-          btn.textContent = 'Cerrar Mes Automáticamente';
-          btn.disabled = false;
+
+      let listLotes = Object.values(lotesModulo).filter(x => x.stock > 0);
+
+      listLotes.sort((a, b) => {
+          const getExp = (str) => {
+             const pVence = str.split('|').find(p => p.includes('Vence:'));
+             if(!pVence) return 0;
+             const dArr = pVence.replace('Vence:', '').trim().split('/');
+             if(dArr.length === 3) {
+                 const yy = dArr[2].length === 2 ? '20'+dArr[2] : dArr[2];
+                 return new Date(parseInt(yy), parseInt(dArr[1])-1, parseInt(dArr[0])).getTime();
+             }
+             return 0;
+          };
+          return getExp(b.str) - getExp(a.str);
+      });
+
+      if (listLotes.length === 0) {
+          listLotes.push({ stock: Infinity, str: 'Lote: RETORNO MÓDULO | Marca: S/M' });
       }
+
+      let movimientos = [];
+      let faltan = sobrantes;
+
+      for (let i = 0; i < listLotes.length; i++) {
+          if (faltan <= 0) break;
+          const lot = listLotes[i];
+          let cantDevolver = (faltan <= lot.stock) ? faltan : lot.stock;
+
+          if (cantDevolver > 0) {
+              movimientos.push({ ...baseObj, tipo: 'Devolucion', cantidad: cantDevolver, entrada: cantDevolver, salida: '', observacion: 'RETORNO DE STOCK OPERATIVO (CIERRE DE MES)', lote: lot.str });
+              faltan -= cantDevolver;
+          }
+      }
+
+      if (faltan > 0) {
+          movimientos.push({ ...baseObj, tipo: 'Devolucion', cantidad: faltan, entrada: faltan, salida: '', observacion: 'RETORNO DE STOCK OPERATIVO (EXCEDENTE)', lote: listLotes[0].str });
+      }
+
+      function sendMov(mov) {
+          return new Promise((resolve, reject) => {
+              if (typeof google === 'undefined') { setTimeout(resolve, 500); return; }
+              google.script.run.withSuccessHandler(res => {
+                  if(res && !res.success) reject(res.message); else resolve(res);
+              }).withFailureHandler(reject).registrarMovimiento(mov);
+          });
+      }
+
+      async function procesar() {
+          try {
+              for (let m of movimientos) {
+                  await sendMov(m);
+              }
+
+              showCustomAlert('El Retorno de Mes se registró correctamente. Los tubos han vuelto a tu stock principal respetando los lotes originales.', 'Éxito Absoluto');
+              document.getElementById('modal-cierre-mes').classList.remove('open');
+
+              if (typeof google !== 'undefined') {
+                  google.script.run.withSuccessHandler(d => { window.KARDEX_DATA = d; if(window.renderTable) window.renderTable(); }).getKardexData();
+              }
+          } catch(err) {
+              showCustomAlert('Error guardando el retorno: ' + err, 'Error de Conexión', true);
+          } finally {
+              btn.textContent = 'Cerrar Mes Automáticamente';
+              btn.disabled = false;
+          }
+      }
+      procesar();
+  } catch(fatalError) {
+      alert("Error fatal en el sistema: " + fatalError.message);
   }
-  procesar();
+};
+
+      const normalizeText = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
+      const prodObj = window.KARDEX_DATA.find(r => normalizeText(r.nombre) === normalizeText(producto));
+      if(!prodObj) {
+          showCustomAlert('Producto no encontrado. Revisa que el nombre esté escrito exactamente igual.', 'Error', true);
+          return;
+      }
+      
+      const btn = document.getElementById('btn-ejecutar-cierre');
+      btn.textContent = 'Procesando...';
+      btn.disabled = true;
+      
+      const now = new Date();
+      const _p = n => String(n).padStart(2,'0');
+      const fecha = `${now.getFullYear()}-${_p(now.getMonth()+1)}-${_p(now.getDate())}`;
+      const hora = now.toTimeString().split(' ')[0].substring(0,5);
+      
+      const baseObj = {
+        fecha: fecha, hora: hora, codigo: prodObj.codigo, nombre: prodObj.nombre,
+        tipo2: prodObj.tipo2 || 'MATERIAL DE LABORATORIO', 
+        comprobante: 'RETORNO-' + _p(now.getMonth()+1), usuario: 'AUTO', pin: pin, area: 'TOMA DE MUESTRA'
+      };
+
+      // --- LÓGICA DE DISTRIBUCIÓN AUTOMÁTICA DE LOTES (LIFO) ---
+      let lotesModulo = {};
+      window.KARDEX_DATA.forEach(r => {
+          if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
+          if (normalizeText(r.nombre) !== normalizeText(producto)) return;
+          
+          const esToma = String(r.area||'').toUpperCase().includes('TOMA DE MUESTRA');
+          if (!esToma) return;
+          
+          const tipo = String(r.tipo||'').trim().toLowerCase();
+          const l = r.lote || 'Lote: S/L | Marca: S/M';
+          
+          if (!lotesModulo[l]) lotesModulo[l] = { stock: 0, str: l };
+          
+          if (tipo === 'salida') {
+              lotesModulo[l].stock += Number(r.salida||0);
+          } else if (tipo === 'devolucion' || tipo === 'descarte') {
+              lotesModulo[l].stock -= (Number(r.entrada||0) || Number(r.salida||0));
+          }
+      });
+
+      let listLotes = Object.values(lotesModulo).filter(x => x.stock > 0);
+      
+      listLotes.sort((a, b) => {
+          const getExp = (str) => {
+             const pVence = str.split('|').find(p => p.includes('Vence:'));
+             if(!pVence) return 0;
+             const dArr = pVence.replace('Vence:', '').trim().split('/');
+             if(dArr.length === 3) {
+                 const yy = dArr[2].length === 2 ? '20'+dArr[2] : dArr[2];
+                 return new Date(parseInt(yy), parseInt(dArr[1])-1, parseInt(dArr[0])).getTime();
+             }
+             return 0;
+          };
+          return getExp(b.str) - getExp(a.str);
+      });
+      
+      if (listLotes.length === 0) {
+          listLotes.push({ stock: Infinity, str: 'Lote: RETORNO MÓDULO | Marca: S/M' });
+      }
+
+      let movimientos = [];
+      let faltan = sobrantes;
+      
+      for (let i = 0; i < listLotes.length; i++) {
+          if (faltan <= 0) break;
+          const lot = listLotes[i];
+          let cantDevolver = (faltan <= lot.stock) ? faltan : lot.stock;
+          
+          if (cantDevolver > 0) {
+              movimientos.push({ ...baseObj, tipo: 'Devolucion', cantidad: cantDevolver, entrada: cantDevolver, salida: '', observacion: 'RETORNO DE STOCK OPERATIVO (CIERRE DE MES)', lote: lot.str });
+              faltan -= cantDevolver;
+          }
+      }
+      
+      if (faltan > 0) {
+          movimientos.push({ ...baseObj, tipo: 'Devolucion', cantidad: faltan, entrada: faltan, salida: '', observacion: 'RETORNO DE STOCK OPERATIVO (EXCEDENTE)', lote: listLotes[0].str });
+      }
+
+      function sendMov(mov) {
+          return new Promise((resolve, reject) => {
+              if (typeof google === 'undefined') { setTimeout(resolve, 500); return; }
+              google.script.run.withSuccessHandler(res => {
+                  if(res && !res.success) reject(res.message); else resolve(res);
+              }).withFailureHandler(reject).registrarMovimiento(mov);
+          });
+      }
+      
+      async function procesar() {
+          try {
+              for (let m of movimientos) {
+                  await sendMov(m);
+              }
+              
+              showCustomAlert('El Retorno de Mes se registró correctamente. Los tubos han vuelto a tu stock principal respetando los lotes originales.', 'Éxito Absoluto');
+              document.getElementById('modal-cierre-mes').classList.remove('open');
+              
+              if (typeof google !== 'undefined') {
+                  google.script.run.withSuccessHandler(d => { window.KARDEX_DATA = d; if(window.renderTable) window.renderTable(); }).getKardexData();
+              }
+          } catch(err) {
+              showCustomAlert('Error guardando el retorno: ' + err, 'Error de Conexión', true);
+          } finally {
+              btn.textContent = 'Cerrar Mes Automáticamente';
+              btn.disabled = false;
+          }
+      }
+      procesar();
+  } catch(fatalError) {
+      alert("Error fatal en el sistema: " + fatalError.message);
+  }
 };
 </script>
 </body>
