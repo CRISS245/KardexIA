@@ -75,101 +75,91 @@ function poblarGoogleSheetsOficialDirecto() {
   const fecha = Utilities.formatDate(now, Session.getScriptTimeZone(), "dd/MM/yyyy");
   const hora = Utilities.formatDate(now, Session.getScriptTimeZone(), "hh:mm:ss a");
 
-  // Lista Oficial Completa de Productos del Hospital (Stock = 0, Códigos oficiales para Escritorio)
+  // Lista Oficial de Productos del Laboratorio (79 productos, Stock = 0)
   const productosOficiales = [
-    // --- MATERIAL DE ESCRITORIO (28 CÓDIGOS OFICIALES DE 12 DÍGITOS) ---
-    { nombre: "BOLIGRAFO - AZUL", codigo: "716000010208", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "BOLIGRAFO - ROJO", codigo: "716000010187", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "BOLIGRAFO - NEGRO", codigo: "716000010209", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "PAPEL BOND 80G", codigo: "717200050224", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "LIBRO ACTAS -DE 200H.", codigo: "717200140150", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "LIBRO ACTAS -DE 400H.", codigo: "717200140151", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "CLIP DE METAL", codigo: "718500050032", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "GRAPA 26 X 6", codigo: "718500080026", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "ACOFASTER", codigo: "718500100017", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "LIGA DE JEBE", codigo: "718500110025", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "CINTA - CHICA", codigo: "710300010048", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "CINTA - AMBALAJE", codigo: "710300010026", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "GOMA BARRA", codigo: "710300060058", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "ARCHIVADORES PALANCA", codigo: "710600010076", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "CORRECTOR", codigo: "711100030001", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "ENGRAPADOR DE METAL", codigo: "715000110033", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "REGLA PLASTICA", codigo: "715000190001", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "ESPONJERO", codigo: "715000240003", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "LAPIZ NEGRO", codigo: "716000040045", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "PLUMON -GRUESO-NEGRO IND.", codigo: "716000060375", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "PLUMON -ACR.GRUESO-ROJO", codigo: "716000060405", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "PLUMON -ACR.GRUESO-AZUL", codigo: "716000060421", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "PLUMON -ACR.GRUESO-NEGRO", codigo: "716000060423", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "PLUMON -ACR.GRUESO-VERDE", codigo: "716000060424", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "TAMPON-CUBIERTA-ROJO", codigo: "716000090046", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "TAMPON-CUBIERTA-AZUL", codigo: "716000090048", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "TINTA PARA TAMPON-ROJO", codigo: "716000160015", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-    { nombre: "RESALTADOR", codigo: "716000060482", tipo2: "MATERIAL DE ESCRITORIO", stock: 0 },
-
-    // --- MATERIAL DE LABORATORIO Y TUBOS DE FLEBOTOMÍA (SIN CÓDIGO, STOCK = 0) ---
-    { nombre: "TUBO DE PLASTICO CON EDTA X 2ML", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "TUBO DE PLASTICO CON EDTA X 4ML", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "TUBO VACUTAINER CON EDTA K2 4ML", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "TUBO VACUTAINER CON EDTA K3 3ML", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "TUBO VACUTAINER TAPA ROJA (ACTIVADOR DE COÁGULO)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "TUBO VACUTAINER TAPA AMARILLA (GEL SEPARADOR)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "TUBO VACUTAINER TAPA CELESTE (CITRATO DE SODIO 3.2%)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "TUBO VACUTAINER TAPA VERDE (HEPARINA DE SODIO)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "TUBO VACUTAINER TAPA GRIS (FLUORURO DE SODIO)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "TUBO DE VIDRIO BIOQUÍMICA", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "TUBO DE VIDRIO INMUNOLOGÍA", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "TUBO MICROTAINER CON EDTA X 0.5ML", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
     { nombre: "AGUJAS DESCARTABLES 20 X 1", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "AGUJAS DESCARTABLES 23 X 1", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
     { nombre: "AGUJAS VACUTAINER 21 X 1/2", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "ALITAS VACUTAINER SAFETY-LOK 23 X 3/4", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "GASA FRACCIONADA ESTERIL 5X5 cm", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "ALCOHOL GEL", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "ALCOHOL PURO 70°", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
     { nombre: "ALGODÓN x 500 GR", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "ESPARADRAPO", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "ALITAS VACUTAINER SAFETY-LOK 23 X 3/4", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "ARCHIVADOR PLASTIFICADO", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "BOLIGRAFO TINTA FINA COLOR AZUL", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "BOLIGRAFO TINTA FINA COLOR NEGRO", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "BOLIGRAFO TINTA FINA COLOR ROJO", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "BOLSA DE PLASTICO NEGRA x 100", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "BOLSA DE PLASTICO ROJA x 100", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
     { nombre: "BOLSAS COLECTORA PARA ORINA 50 ML", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "ALCOHOL ETILICO 70%", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "CATETER INTRAVENOSO 22G", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "CATETER INTRAVENOSO 24G", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "JERINGA 3 ML CON AGUJA", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "JERINGA 5 ML CON AGUJA", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "JERINGA 10 ML CON AGUJA", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "JERINGA 20 ML", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "GUANTES EXAMEN DE NITRILO TALLA L", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "GUANTES EXAMEN DE NITRILO TALLA M", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "GUANTES EXAMEN DE NITRILO TALLA S", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "MASCARILLA QUIRÚRGICA 3 PLIEGUES", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "MASCARILLA N95 / KN95", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "MANDILÓN DESCARTABLE ESTÉRIL", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "GORRO ORTOPÉDICO DESCARTABLE", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "CUBRECALZADO DESCARTABLE", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "BOQUILLAS PARA ESPIRÓMETRO", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "PUNTERAS PARA PIPETA AZUL (1000 UL)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "PUNTERAS PARA PIPETA AMARILLA (200 UL)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "PUNTERAS PARA PIPETA BLANCA (10 UL)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "LÁMINAS PORTAOBJETOS 26X76 MM", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "LAMINILLAS CUBREOBJETOS 22X22 MM", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "TIRA REACTIVA PARA UROANÁLISIS", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "REACTIVO PARA BIOQUÍMICA GLUCOSA", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "REACTIVO PARA BIOQUÍMICA UREA", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-    { nombre: "REACTIVO PARA BIOQUÍMICA CREATININA", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
-
-    // --- MATERIAL DE LIMPIEZA (SIN CÓDIGO, STOCK = 0) ---
-    { nombre: "JABÓN LÍQUIDO GERMICIDA", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
-    { nombre: "ALCOHOL EN GEL 70% CON DOSIFICADOR", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
-    { nombre: "LEJÍA / HIPOCLORITO DE SODIO 5%", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
-    { nombre: "DETERGENTE EN POLVO MULTIUSO", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
-    { nombre: "DETERGENTE ENZIMÁTICO PARA INSTRUMENTAL", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
-    { nombre: "PAPEL HIGIÉNICO ROLLO INSTITUCIONAL", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
-    { nombre: "PAPEL TOALLA INTERFOLIADO", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
-    { nombre: "BOLSA DE BASURA ROJA (BIOCONTAMINADO)", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
-    { nombre: "BOLSA DE BASURA NEGRA (RESIDUOS COMUNES)", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
-    { nombre: "BOLSA DE BASURA AMARILLA (ESPECIALES)", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
-    { nombre: "PAÑO DE MICROFIBRA MULTIUSO", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
-    { nombre: "ESPONJA DE LIMPIEZA SINTÉTICA", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
-    { nombre: "GUANTES DE JEBE MULTIUSO TALLA L", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
-    { nombre: "GUANTES DE JEBE MULTIUSO TALLA M", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 },
-    { nombre: "DESINFECTANTE DE SUPERFICIES AMONIO CUATERNARIO", codigo: "", tipo2: "MATERIAL DE LIMPIEZA", stock: 0 }
+    { nombre: "BOTAS PROTECTORAS DE CALZADO", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "CAJAS PARA TRANSPORTE DE MUESTRAS", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "CAPILAR PARA HEMATOCRITO CON HEPARINA X 100", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "CAPUCHONES CON EXPULSADOR HOLDER (BD)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "CHAQUETA TALLA XL", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "CINTA ADHESIVA DELGADA", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "CLIPS METALICO", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "CORRECTOR COLOR BLANCO", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "CUADERNO DE CARGO", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "ENGRAPADOR DE METAL", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "ESPARADRAPO", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "FASTER", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "FOLDER CARTULINA AZUL", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "FRACOS PARA CELULAS LE (HEMATOLOGIA)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "FRASCO BACTEC PARA HEMOCULTIVOS", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "GASA FRACCIONADA ESTERIL 5X5 cm", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "GLUCONATO DE CLORHEXIDINA 2% EN ESPUMA X 1 Lt.", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "GORRO DESCARTABLE DE ENFERMERA", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "GRAPAS", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "GUANTES DE NITRILO DESCART. M CAJA X 100 UNIDADES", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "GUANTES DE NITRILO DESCART. S CAJA X 100 UNIDADES", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "JERINGA DESC. 5 ML C/AGUJA DE 21x1 1/2", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "KIT CHAQUETA Y PANTALON TALLA L", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "KIT CHAQUETA Y PANTALON TALLA M", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "LAMINAS PARA TEST DE GRAHAM (MICROBIOLOGIA)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "LAMINAS PORTA OBJETO DE VIDRIO (HEMATOLOGIA)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "LANCETAS 1.8 DESCARTABLES (200 UNIDADES)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "LAPIZ DE CERA PARA VIDRIO AZUL CAJA X 10 UNIDADES", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "LAPIZ DE CERA PARA VIDRIO ROJO CAJA X 10 UNIDADES", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "LEJIA X 500 Ml", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "MAMELUCO DESCARTABLE T/L", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "MAMELUCO DESCARTABLE T/M", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "MANDILON DESCARTABLE T/L", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "MASCARILLA KN95", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "MASCARILLAS DESCARTABLES x 50 und", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "PAPEL BOND 80 gr TAMAÑO A4", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "PAPEL BOND CORTADO TAMAÑO A4", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "PAPEL DE FILTRO CORRIENTE", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "PAPEL TOALLA DOBLADO PQT. x 200 HOJAS (ELITE)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "PAPEL TOALLA DOBLADO PQT. x 200 HOJAS (HTOOLS)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "PAPEL TOALLA DOBLADO PQT. x 200 HOJAS (SFOLL)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "PLACA DE CERA PARA SELLADO DE CAPILARES", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "PROTECTORES OCULARES", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "REGLA PLASTICA DE 30 CM", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "RESPIRARDOR N95", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "ROLLO PARA CODIGO DE BARRA (BIOQUIMICA)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "ROLLO PARA CODIGO DE BARRA (HEMATOLOGÍA)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "ROLLO PARA PEDESTAL DE RECEPCION (BD)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "ROLLO PARA PEDESTAL DE RECEPCION (BD) 5.8CM X 8CM", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "ROLLO PARA PEDESTAL DE RECEPCION ORINA (BD)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "ROLLO PARA PEDESTAL DE RECEPCION ORINA (BD) 5.8CM X 8CM", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TAMPOM PARA SELLO AZUL", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TAMPOM PARA SELLO ROJO", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TARJETA DE CONTROL VISIBLE DE ALMACEN", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TINTA AZUL PARA TAMPON", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TINTA ROJO PARA TAMPON", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TONER HP 105A (BD)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TUBO CON EDTA X 0.5 ML.", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TUBO DE PLASTICO CON CITRATO X 1.8 ML", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TUBO DE PLASTICO CON CITRATO X 2.0 ML", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TUBO DE PLASTICO CON CITRATO X 2.7 ML", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TUBOS DE PLASTICO CON EDTA X 2ML", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TUBOS DE PLASTICO CON EDTA X 3ML", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TUBOS DE PLASTICO CON EDTA X 6ML (INFECTOLOGIA)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TUBOS DE PLASTICO CON GEL SEPARADOR X 3.5 ML", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TUBOS DE VIDRIO (BIOQUIMICA)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 },
+    { nombre: "TUBOS DE VIDRIO (INMUNOLOGIA)", codigo: "", tipo2: "MATERIAL DE LABORATORIO", stock: 0 }
   ];
+
 
   let rowsToAppend = [];
   productosOficiales.forEach(p => {
@@ -373,10 +363,32 @@ function registrarMovimiento(datos) {
     // 5. Generar Identificador Único Universal (UUID)
     const movId = Utilities.getUuid();
 
-    // 6. Fecha y Hora exactas desde el servidor (no manipulables)
-    const now = new Date();
-    const fecha = Utilities.formatDate(now, Session.getScriptTimeZone(), "dd/MM/yyyy");
-    const hora = Utilities.formatDate(now, Session.getScriptTimeZone(), "hh:mm:ss a");
+    // 6. Fecha y Hora (Permitir fechas y horas personalizadas si vienen del frontend)
+    let fecha = "";
+    if (datos.fecha && datos.fecha.includes("-")) {
+      const partes = datos.fecha.split("-");
+      fecha = `${partes[2]}/${partes[1]}/${partes[0]}`; // YYYY-MM-DD a dd/MM/yyyy
+    } else if (datos.fecha && datos.fecha.includes("/")) {
+      fecha = datos.fecha; // Si ya viene formateada
+    } else {
+      const now = new Date();
+      fecha = Utilities.formatDate(now, Session.getScriptTimeZone(), "dd/MM/yyyy");
+    }
+    
+    let hora = "";
+    if (datos.hora && datos.hora.includes(":")) {
+      const timeParts = datos.hora.split(":");
+      let H = parseInt(timeParts[0]);
+      const m = timeParts[1];
+      const ampm = H >= 12 ? 'pm' : 'am';
+      H = H % 12;
+      H = H ? H : 12;
+      const Hstr = H < 10 ? '0'+H : H;
+      hora = `${Hstr}:${m}:00 ${ampm}`;
+    } else {
+      const now = new Date();
+      hora = Utilities.formatDate(now, Session.getScriptTimeZone(), "hh:mm:ss a");
+    }
 
     // 7. Insertar fila en Google Sheets
     sheet.appendRow([
@@ -515,17 +527,29 @@ function anularMovimiento(datos) {
 
     sheetInv.getRange(rowOriginalIndex, 12).setValue(obsOriginal + " [ANULADO]");
 
-    // Calcular saldo real sumando entradas y restando salidas (igual que registrarMovimiento)
-    const normL = (str) => String(str || "").split("|")[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-    const targetCodAnul = normL(rowOriginal[3]);
-    const targetLoteAnul = normL(rowOriginal[6]);
+    // Calcular saldo real sumando entradas y restando salidas (GLOBAL DEL PRODUCTO)
+    const normalize = (str) => String(str || "").toLowerCase().replace(/[^a-z0-9]/g, '');
+    const getProductKey = (codigo, nombre) => {
+        const rawCod = String(codigo || "").trim();
+        const nCod = normalize(rawCod);
+        if (!nCod || nCod === 'sc' || nCod === 'na' || nCod === 'sincodigo' || nCod === 'sl' || rawCod.length < 8 || !/^\d+$/.test(rawCod)) {
+            return normalize(nombre);
+        }
+        return nCod;
+    };
+    
+    const targetKeyAnul = getProductKey(rowOriginal[3], rowOriginal[4]);
     let ultimoSaldo = 0;
+    
     for (let i = 1; i < invData.length; i++) {
-      if (normL(invData[i][3]) === targetCodAnul && normL(invData[i][6]) === targetLoteAnul) {
+      if (String(invData[i][11] || "").includes("[ANULADO]")) continue;
+      
+      const rowKey = getProductKey(invData[i][3], invData[i][4]);
+      if (rowKey === targetKeyAnul) {
         const tipo = String(invData[i][2]).trim();
         if (tipo === 'Entrada' || tipo === 'Prestamo') ultimoSaldo += Number(invData[i][7]) || 0;
         if (tipo === 'Salida' || tipo === 'Descarte' || tipo === 'Devolucion') ultimoSaldo -= Number(invData[i][8]) || 0;
-        if (tipo === 'Ajuste' || tipo === 'Ajuste (Anulación)') {
+        if (tipo === 'Ajuste') {
           ultimoSaldo += Number(invData[i][7]) || 0;
           ultimoSaldo -= Number(invData[i][8]) || 0;
         }
@@ -590,6 +614,7 @@ function getUsuarios() {
     sheet = ss.insertSheet("Usuarios");
     sheet.appendRow(["Usuario", "PIN", "Correo", "Rol"]);
     sheet.getRange("A1:D1").setFontWeight("bold").setBackground("#d9ead3");
+    return [];
   } else {
     // Migración automática: Si la hoja antigua solo tiene 3 columnas y la columna C es "Rol"
     const header = sheet.getRange("A1:D1").getValues()[0];
@@ -601,54 +626,8 @@ function getUsuarios() {
   }
   
   const data = sheet.getDataRange().getValues();
-  const existingUsers = data.length > 1 ? data.slice(1).map(row => String(row[0]).trim()) : [];
-  
-  const requiredUsers = [
-    "Christian R.", "Maria S.", "Violeta G.", "Junior E.", "Juan G.", 
-    "Eliana S.", "Evelyn L.", "Clau A.", "Susan D.", "Yesenia R.", "Dr. Aarón"
-  ];
-  
-  let added = false;
-  requiredUsers.forEach(u => {
-    if (!existingUsers.includes(u) && !existingUsers.includes("María S.") && !(u === "Maria S." && existingUsers.includes("María S."))) {
-      let rol = "Técnico de Laboratorio";
-      if (u === "Christian R.") rol = "Administrador";
-      if (u === "Maria S." || u === "María S." || u === "Junior E." || u === "Dr. Aarón") rol = "Personal de Almacén";
-      
-      const plainPin = (u === "Christian R.") ? "12345" : "0000";
-      sheet.appendRow([u, hashPin(plainPin), "", rol]); // Guarda el Hash SHA-256, no el texto plano
-      added = true;
-    }
-  });
-
-  // Forzar actualización de roles
-  let changed = false;
-  const newData = sheet.getDataRange().getValues();
-  for (let i = 1; i < newData.length; i++) {
-     let u = String(newData[i][0]).trim();
-     let currentRol = String(newData[i][3] || "").trim(); // Rol ahora es índice 3
-     let desiredRol = currentRol;
-     
-     if (u === "Maria S." || u === "María S." || u === "Junior E." || u === "Dr. Aarón" || u === "Dr. Aaron") {
-         desiredRol = "Personal de Almacén";
-     } else if (u === "Christian R.") {
-         desiredRol = "Administrador";
-     } else {
-         desiredRol = "Técnico de Laboratorio";
-     }
-     
-     if (currentRol !== desiredRol) {
-         sheet.getRange(i + 1, 4).setValue(desiredRol); // Actualizar en Columna 4 (D)
-         changed = true;
-     }
-  }
-  
-  if (added || changed) {
-    const finalData = sheet.getDataRange().getValues();
-    return finalData.slice(1).map(row => ({ nombre: String(row[0]).trim(), rol: String(row[3]).trim() })).filter(u => u.nombre !== "");
-  }
-  
   if (data.length <= 1) return [];
+  
   return data.slice(1).map(row => ({ nombre: String(row[0]).trim(), rol: String(row[3]).trim() })).filter(u => u.nombre !== "");
 }
 
