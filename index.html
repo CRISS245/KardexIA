@@ -440,14 +440,14 @@ body::before{
 }
 
 /* ── TABLE ── */
-.table-wrap{overflow-x:auto;width:100%;}
+.table-wrap{overflow-x:auto;overflow-y:auto;width:100%;max-height:calc(100vh - 220px);}
 table{width:100%;border-collapse:collapse;font-size:0.78rem;}
 thead th{
   padding:8px 11px;text-align:left;
   font-size:0.64rem;font-weight:700;
   letter-spacing:0.7px;text-transform:uppercase;
   color:var(--muted);border-bottom:1px solid var(--border);
-  white-space:nowrap;background:transparent;
+  white-space:nowrap;background:var(--bg2);position:sticky;top:0;z-index:10;
   font-family:'Inter',sans-serif;
 }
 tbody tr{
@@ -1131,6 +1131,7 @@ select.form-control option{
             <div class="table-title"><span class="table-title-icon">⚗️</span> KARDEX — MOVIMIENTOS</div>
             <div style="display:flex; gap:10px;">
               <button class="btn-nuevo" onclick="abrirCierreMes()" style="background:rgba(168,85,247,0.15); color:var(--purple); border:1px solid rgba(168,85,247,0.4); font-size:0.75rem; padding:8px 15px; box-shadow:none; font-weight:bold;">🔄 Cierre Módulos</button>
+              <button class="btn-nuevo" onclick="abrirAuditoriaCuadre()" style="background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.4); font-size:0.75rem; padding:8px 15px; box-shadow:none; font-weight:bold;">⚖️ Auditoría Cuadre</button>
               <button class="btn-nuevo" onclick="resetFilters()" style="background:rgba(59,130,246,0.15); color:var(--blue); border:1px solid rgba(59,130,246,0.4); font-size:0.75rem; padding:8px 15px; box-shadow:none;">🔄 Limpiar Filtros</button>
               <button class="btn-nuevo" onclick="exportKardexCSV()" style="background:rgba(16,185,129,0.15); color:var(--green); border:1px solid rgba(16,185,129,0.4); font-size:0.75rem; padding:8px 15px; box-shadow:none;">📥 Exportar a Excel</button>
             </div>
@@ -1305,6 +1306,8 @@ select.form-control option{
         <div class="table-header">
           <div class="table-title"><span class="table-title-icon">🏥</span> MINI-ALMACÉN DE CONTINGENCIA (TUBOS DE VIDRIO)</div>
           <div id="contingencia-actions" style="display:flex; gap:10px;">
+            <button class="btn-nuevo" onclick="abrirCierreMesMiniAlmacen()" style="background:rgba(168,85,247,0.15); color:var(--purple); border:1px solid rgba(168,85,247,0.4); padding: 8px 12px;">🔄 Cierre Módulos</button>
+            <button class="btn-nuevo" onclick="abrirAuditoriaMiniAlmacen()" style="background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.4); padding: 8px 12px;">⚖️ Auditoría Cuadre</button>
             <button class="btn-nuevo" onclick="openContingenciaModal('Entrada');" style="background:linear-gradient(135deg, var(--green), #047857); border:none;">+ Entrada</button>
             <button class="btn-nuevo" onclick="openContingenciaModal('Salida');" style="background:linear-gradient(135deg, var(--red), #b91c1c); border:none;">- Salida</button>
             <button class="btn-nuevo" onclick="openContingenciaModal('Devolucion');" style="background:linear-gradient(135deg, var(--purple), #6d28d9); border:none;">↺ Devolución</button>
@@ -1432,11 +1435,18 @@ select.form-control option{
               </div>
             </div>
             <div style="margin-bottom:15px; color:var(--muted2); font-size:0.8rem; background:rgba(255,255,255,0.02); padding:10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
-              Detecta automáticamente y exporta un listado urgente de los reactivos e insumos que vencerán en los próximos 90 días o que ya han expirado.
+              Exporta tus lotes. Puedes sacar el <b>Reporte General</b> (para ver TODOS tus lotes y auditar) o las <b>Alertas Críticas</b> (solo los próximos 90 días, para FEFO).
             </div>
-            <div style="display:flex; gap:10px;">
-              <button class="btn-submit" onclick="exportVencimientos(true)" style="margin:0; width:50%; background:rgba(239,68,68,0.15); color:var(--red); border:1px solid rgba(239,68,68,0.4); font-size:0.9rem;">👁️ Ver Previa</button>
-              <button class="btn-submit" onclick="exportVencimientos(false)" style="margin:0; width:50%; background:linear-gradient(135deg,var(--red),#be123c); font-size:0.9rem; color:#fff;">📥 Descargar</button>
+            
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; gap:10px;">
+                <button class="btn-submit" onclick="exportVencimientos(true, false)" style="margin:0; width:50%; background:rgba(59,130,246,0.15); color:#3b82f6; border:1px solid rgba(59,130,246,0.4); font-size:0.85rem;">👁️ Previa: TODOS</button>
+                <button class="btn-submit" onclick="exportVencimientos(false, false)" style="margin:0; width:50%; background:linear-gradient(135deg,#3b82f6,#2563eb); font-size:0.85rem; color:#fff;">📊 Bajar TODOS</button>
+              </div>
+              <div style="display:flex; gap:10px;">
+                <button class="btn-submit" onclick="exportVencimientos(true, true)" style="margin:0; width:50%; background:rgba(239,68,68,0.15); color:var(--red); border:1px solid rgba(239,68,68,0.4); font-size:0.85rem;">👁️ Previa: 90 Días</button>
+                <button class="btn-submit" onclick="exportVencimientos(false, true)" style="margin:0; width:50%; background:linear-gradient(135deg,var(--red),#be123c); font-size:0.85rem; color:#fff;">🚨 Bajar 90 Días</button>
+              </div>
             </div>
           </div>
           
@@ -1612,57 +1622,81 @@ select.form-control option{
         </div>
 
         <!-- Contenedor para el resto de las configuraciones abajo -->
-        <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; width: 100%; padding-bottom: 20px;">
+        <div style="width: 100%; padding-bottom: 20px;">
           
-
-
-          <!-- Inteligencia Artificial -->
-          <div class="panel-card" style="flex: 1; min-width: 320px; max-width: 400px; padding: 25px; background:#0f172a; border:1px solid #1e293b; border-radius: 12px;">
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
-              <video autoplay loop muted playsinline style="width:35px; height:35px; border-radius:50%; mix-blend-mode:screen; background:#000; object-fit:cover;"><source src="https://i.imgur.com/mv790hb.mp4" type="video/mp4"></video>
-              <h3 style="color:var(--blue); font-size:1.1rem; margin:0;">KARDEXIA - IA</h3>
-            </div>
-            <p style="color:var(--muted); font-size:0.85rem; line-height:1.5; margin-bottom:20px;">Ingresa tu API Key de Groq (Llama 3.3) para activar el asistente de chat integrado a velocidad ultrarrápida.</p>
-            <div style="display:flex; flex-direction: column; gap:10px;">
-              <input type="password" id="gemini-api-key" class="form-control" placeholder="API Key aquí..." style="width:100%;">
-              <button class="btn-submit" onclick="guardarApiKey()" style="margin:0; background:linear-gradient(135deg,var(--blue),#1d4ed8); width: 100%;">💾 Guardar API Key</button>
-            </div>
-          </div>
-
-          <!-- Gestión de Personal -->
-          <div class="panel-card" style="flex: 2; min-width: 350px; max-width: 600px; padding: 25px; background:#0f172a; border:1px solid #1e293b; border-radius: 12px;">
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
-              <span style="font-size: 1.5rem;">🔐</span>
-              <h3 style="color:#8b5cf6; font-size:1.1rem; margin:0;">Gestión de Accesos</h3>
-            </div>
-            
-            <p style="color:var(--muted); font-size:0.85rem; margin-bottom:20px;">Los usuarios configurados aquí podrán recibir alertas y gestionar el sistema.</p>
-            
-            <button class="btn-guardar" onclick="document.getElementById('modal-admin-auth').classList.add('open')" style="width:100%; padding: 12px; background: linear-gradient(135deg, #8b5cf6, #6d28d9); font-size:1rem; border: none; border-radius: 6px; cursor: pointer; color: white;">🔒 Desbloquear Administración</button>
-
-            <div id="admin-users-panel" style="display: none; margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px;">
-              <div class="table-header" style="margin-bottom:15px; padding-bottom:0; border:none; display:flex; justify-content:space-between; align-items:center;">
-                <h3 style="color:var(--blue); font-size:1rem; margin:0;">👥 Personal Registrado</h3>
-                <button class="btn-nuevo" onclick="abrirModalUsuario()" style="background:linear-gradient(135deg,var(--blue),#1d4ed8); margin:0; padding:4px 10px; font-size:0.75rem;">+ Nuevo Perfil</button>
-              </div>
-              <div class="table-wrap" style="max-height: 250px; overflow-y: auto;">
-                <table>
-                  <thead>
-                    <tr>
-                      <th style="background:#020617; color:var(--muted2); font-size:0.65rem; padding: 8px;">NOMBRE</th>
-                      <th style="background:#020617; color:var(--muted2); font-size:0.65rem; padding: 8px;">CORREO</th>
-                      <th style="background:#020617; color:var(--muted2); font-size:0.65rem; padding: 8px;">ROL</th>
-                      <th style="background:#020617; color:var(--muted2); font-size:0.65rem; padding: 8px; text-align:right;">ACCIONES</th>
-                    </tr>
-                  </thead>
-                  <tbody id="tbody-usuarios">
-                    <!-- Dinámico -->
-                  </tbody>
-                </table>
-              </div>
+          <!-- Bloqueo de Configuración Avanzada -->
+          <div id="config-avanzada-lock" style="width: 100%; max-width: 500px; margin: 0 auto 30px auto; padding: 25px; background: rgba(15,23,42,0.8); border: 1px solid var(--blue); border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+            <div style="font-size: 2.5rem; margin-bottom: 10px;">🔒</div>
+            <h3 style="color: var(--blue); margin-bottom: 10px;">Configuración Avanzada Bloqueada</h3>
+            <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 20px;">Esta sección contiene herramientas críticas del sistema. Ingresa la contraseña maestra para acceder.</p>
+            <div style="display: flex; gap: 10px; align-items: center; justify-content: center; margin-top: 15px;">
+              <input type="password" id="master-password" class="form-control" placeholder="Contraseña..." style="width: 200px; padding: 10px; text-align: center;" onkeypress="if(event.key==='Enter') desbloquearConfigAvanzada()">
+              <button class="btn-submit" onclick="desbloquearConfigAvanzada()" style="margin: 0; white-space: nowrap; background: linear-gradient(135deg,var(--blue),#1d4ed8); padding: 10px 20px;">Desbloquear</button>
             </div>
           </div>
           
+          <div id="config-avanzada-paneles" style="display: none; gap: 20px; flex-wrap: wrap; justify-content: center; width: 100%;">
+
+            <!-- Inteligencia Artificial -->
+            <div class="panel-card" style="flex: 1; min-width: 320px; max-width: 400px; padding: 25px; background:#0f172a; border:1px solid #1e293b; border-radius: 12px;">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
+                <video autoplay loop muted playsinline style="width:35px; height:35px; border-radius:50%; mix-blend-mode:screen; background:#000; object-fit:cover;"><source src="https://i.imgur.com/mv790hb.mp4" type="video/mp4"></video>
+                <h3 style="color:var(--blue); font-size:1.1rem; margin:0;">KARDEXIA - IA</h3>
+              </div>
+              <p style="color:var(--muted); font-size:0.85rem; line-height:1.5; margin-bottom:20px;">Ingresa tu API Key de Groq (Llama 3.3) para activar el asistente de chat integrado a velocidad ultrarrápida.</p>
+              <div style="display:flex; flex-direction: column; gap:10px;">
+                <input type="password" id="gemini-api-key" class="form-control" placeholder="API Key aquí..." style="width:100%;">
+                <button class="btn-submit" onclick="guardarApiKey()" style="margin:0; background:linear-gradient(135deg,var(--blue),#1d4ed8); width: 100%;">💾 Guardar API Key</button>
+              </div>
+            </div>
+
+            <!-- Gestión de Personal -->
+            <div class="panel-card" style="flex: 2; min-width: 350px; max-width: 600px; padding: 25px; background:#0f172a; border:1px solid #1e293b; border-radius: 12px;">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
+                <span style="font-size: 1.5rem;">🔐</span>
+                <h3 style="color:#8b5cf6; font-size:1.1rem; margin:0;">Gestión de Accesos</h3>
+              </div>
+              <p style="color:var(--muted); font-size:0.85rem; margin-bottom:20px;">Los usuarios configurados aquí podrán recibir alertas y gestionar el sistema.</p>
+
+              <div id="admin-users-panel" style="display: block; margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+                <div class="table-header" style="margin-bottom:15px; padding-bottom:0; border:none; display:flex; justify-content:space-between; align-items:center;">
+                  <h3 style="color:var(--blue); font-size:1rem; margin:0;">👥 Personal Registrado</h3>
+                  <button class="btn-nuevo" onclick="abrirModalUsuario()" style="background:linear-gradient(135deg,var(--blue),#1d4ed8); margin:0; padding:4px 10px; font-size:0.75rem;">+ Nuevo Perfil</button>
+                </div>
+                <div class="table-wrap" style="max-height: 250px; overflow-y: auto;">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th style="background:#020617; color:var(--muted2); font-size:0.65rem; padding: 8px;">NOMBRE</th>
+                        <th style="background:#020617; color:var(--muted2); font-size:0.65rem; padding: 8px;">CORREO</th>
+                        <th style="background:#020617; color:var(--muted2); font-size:0.65rem; padding: 8px;">ROL</th>
+                        <th style="background:#020617; color:var(--muted2); font-size:0.65rem; padding: 8px; text-align:right;">ACCIONES</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tbody-usuarios">
+                      <!-- Dinámico -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Mantenimiento y Base de Datos (Zona de Peligro) -->
+            <div class="panel-card" style="flex: 1; min-width: 320px; max-width: 400px; padding: 25px; background:linear-gradient(180deg, #0f172a 0%, #1e1b4b 100%); border:1px solid #312e81; border-radius: 12px; position:relative; overflow:hidden;">
+              <div style="position:absolute; top:0; left:0; width:100%; height:3px; background:linear-gradient(90deg, transparent, var(--red), transparent);"></div>
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
+                <span style="font-size: 1.5rem; filter: drop-shadow(0 0 5px var(--red));">⚠️</span>
+                <h3 style="color:#f87171; font-size:1.1rem; margin:0;">Zona de Peligro (Base de Datos)</h3>
+              </div>
+              <p style="color:var(--muted); font-size:0.85rem; line-height:1.5; margin-bottom:20px;">Utiliza estas herramientas para purgar el sistema o inicializar el catálogo. <b>Precaución: El vaciado es irreversible.</b></p>
+              <div style="display:flex; flex-direction: column; gap:10px;">
+                <button class="btn-guardar" onclick="vaciarInventarioConfirmado()" style="margin:0; background:rgba(239,68,68,0.1); border: 1px solid var(--red); color: #fca5a5; width: 100%; padding: 10px; border-radius:6px; cursor:pointer; font-weight:bold; transition:all 0.3s;" onmouseover="this.style.background='var(--red)'; this.style.color='#fff';" onmouseout="this.style.background='rgba(239,68,68,0.1)'; this.style.color='#fca5a5';">🗑️ Vaciar Inventario / Reiniciar</button>
+                
+                <button class="btn-guardar" onclick="poblarDirectoServidor()" style="margin:0; background:rgba(59,130,246,0.1); border: 1px solid var(--blue); color: var(--blue); width: 100%; padding: 10px; border-radius:6px; cursor:pointer; font-weight:bold; transition:all 0.3s;" onmouseover="this.style.background='var(--blue)'; this.style.color='#fff';" onmouseout="this.style.background='rgba(59,130,246,0.1)'; this.style.color='var(--blue)';">📦 Poblar Catálogo Oficial</button>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
     </div>
@@ -2356,21 +2390,22 @@ window.setTipo = function(tipo, el) {
      if (inputNombre) {
        inputNombre.style.display = '';
        inputNombre.required = true;
-       inputNombre.value = ''; // Limpiar el nombre
+       // YA NO limpiamos el nombre aquí
      }
      if (selectNombre) {
        selectNombre.style.display = 'none';
        selectNombre.required = false;
      }
      
-     // Limpiar todos los campos del producto
-     if(lote) lote.value = '';
-     if(cod) cod.value = '';
-     if(mar) mar.value = '';
-     if(ven) ven.value = '';
+     // YA NO limpiamos todos los campos del producto automáticamente
+     // if(lote) lote.value = '';
+     // if(cod) cod.value = '';
+     // if(mar) mar.value = '';
+     // if(ven) ven.value = '';
      
      const mCant = document.getElementById('m-cantidad');
-     if (mCant) mCant.value = ''; // Limpiar cantidad
+     // YA NO limpiamos la cantidad aquí
+     // if (mCant) mCant.value = ''; // Limpiar cantidad
      
      if(area && tipo === 'Entrada') area.value = 'TOMA DE MUESTRA';
      if(window.renderOptions) window.renderOptions(); // Restaurar datalist completo
@@ -2379,34 +2414,42 @@ window.setTipo = function(tipo, el) {
   if (window.filterUsuariosDropdown) window.filterUsuariosDropdown(tipo);
 };
 
+window.isTechRole = function(rol) {
+    if (!rol) return false;
+    let r = String(rol).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+    return (r.includes('TECNICO') || r.includes('TEC') || r.includes('FLEBOTOMISTA')) && !r.includes('ALMAC');
+};
+
 window.handleUsuarioChange = function(modalId) {
     const selectEl = (modalId === 'modal-contingencia') ? document.getElementById('c-usuario') : document.getElementById('m-usuario');
     const userName = selectEl.value;
     
     let userObj = null;
-    if (window.usuariosConfig && window.usuariosConfig.length > 0) {
-        userObj = window.usuariosConfig.find(u => u.nombre === userName);
+    if (typeof usuariosConfig !== 'undefined' && usuariosConfig.length > 0) {
+        userObj = usuariosConfig.find(u => u.nombre === userName);
     } else if (window.ALL_USERS && window.ALL_USERS.length > 0) {
         userObj = window.ALL_USERS.find(u => u.nombre === userName);
     }
     
     if (modalId === 'modal-contingencia') {
-        if (userObj && (userObj.rol === "Téc. de Laboratorio" || userObj.rol === "Flebotomista")) {
+        if (userObj && window.isTechRole(userObj.rol)) {
             showCustomAlert("Tu perfil no tiene permisos para utilizar el Mini-Almacén de Contingencia. Regresando a configuración por defecto...", "Restringido", true);
             selectEl.value = "";
         }
     } else {
         const pills = document.querySelectorAll('.pill-group .pill');
-        if (userObj && (userObj.rol === "Téc. de Laboratorio" || userObj.rol === "Flebotomista")) {
-            // Only allow Falla/Merma (Descarte)
-            window.setTipo('Descarte', pills[2]); // Force Descarte
+        if (userObj && window.isTechRole(userObj.rol)) {
+            const currentTipo = document.getElementById('m-tipo') ? document.getElementById('m-tipo').value : '';
+            if (currentTipo !== 'Descarte') {
+                window.setTipo('Descarte', pills[2]); // Force Descarte
+                showCustomAlert("Por tu perfil, la función se ha cambiado automáticamente a MERMAS / DESCARTES.", "Aviso de Seguridad", false);
+            }
             pills.forEach(p => {
                 if (!p.textContent.includes('Falla/Merma')) {
                     p.style.opacity = '0.3';
                     p.style.pointerEvents = 'none';
                 }
             });
-            showCustomAlert("Por tu perfil, la función se ha limitado únicamente al registro de MERMAS / DESCARTES.", "Aviso de Seguridad", false);
         } else {
             pills.forEach(p => {
                 p.style.opacity = '1';
@@ -2488,8 +2531,13 @@ function showView(viewId) {
   
   // Re-lock the admin panel if we navigate anywhere
   if (viewId !== 'view-config-gateway') {
+    const advLock = document.getElementById('config-avanzada-lock');
+    const advPanels = document.getElementById('config-avanzada-paneles');
+    if (advLock) advLock.style.display = 'block';
+    if (advPanels) advPanels.style.display = 'none';
+    
     const adminPanel = document.getElementById('admin-users-panel');
-    if (adminPanel) adminPanel.style.display = 'none';
+    if (adminPanel) adminPanel.style.display = 'block'; // Reset to block so it shows when unlocked
   }
 }
 
@@ -2834,8 +2882,12 @@ window.quickCheckout = function(codigo, nombreOpcional = null) {
       return showCustomAlert("Producto no encontrado en la base de datos.", "Error", true);
     }
     
-    // Normalizar clave de lote igual que en el resto del sistema
-    const normLK = (str) => String(str || '').split('|')[0].toLowerCase().replace(/[^a-z0-9]/g, '').replace(/^lote/, '') || 'sinlote';
+    // Normalizar clave de lote (incluyendo fecha de vencimiento si existe) para evitar mezclar lotes repetidos
+    const normLK = (str) => {
+       const base = String(str || '').split('|')[0].toLowerCase().replace(/[^a-z0-9]/g, '').replace(/^lote/, '') || 'sinlote';
+       const pVence = String(str || '').split('|').find(p => p.toUpperCase().includes('VENCE'));
+       return pVence ? base + '_' + pVence.trim().toLowerCase().replace(/[^a-z0-9]/g, '') : base;
+    };
     
     let lotesStock = {}; // clave norm -> { stock, loteOriginal }
     KARDEX_DATA.forEach(r => {
@@ -2867,7 +2919,7 @@ window.quickCheckout = function(codigo, nombreOpcional = null) {
     if (ld.stock > 0) {
        const pVence = ld.loteOriginal.split('|').find(px => px.includes('Vence:'));
        if (pVence) {
-         const dArr = pVence.replace('Vence:', '').trim().split('/');
+         const dArr = pVence.replace('Vence:', '').trim().split(/[-\/]/);
          if (dArr.length === 3) {
            const yy = dArr[2].length === 2 ? '20' + dArr[2] : dArr[2];
            const expDate = new Date(parseInt(yy), parseInt(dArr[1]) - 1, parseInt(dArr[0])).getTime();
@@ -2952,17 +3004,16 @@ function renderInventario(onlyMinimo) {
     actionsBtn.innerHTML = `<button class="btn-nuevo" onclick="openModal('Entrada')">+ Registrar Entrada</button>`;
   }
 
-  // Extraer el nombre de lote de forma exacta para agrupar
   const extractLoteKey = (loteStr) => {
     if (!loteStr) return 'SIN_LOTE';
-    let s = String(loteStr).trim().toUpperCase();
-    if (s.includes('|')) {
-      const parts = s.split('|');
-      s = parts[0].replace('LOTE:', '').trim();
-    } else {
-      s = s.replace('LOTE:', '').trim();
-    }
-    return s || 'SIN_LOTE';
+    const s = String(loteStr).trim().toUpperCase();
+    if (!s.includes('LOTE:')) return s;
+    
+    const parts = s.split('|').map(p => p.trim());
+    const lotePart = parts.find(p => p.startsWith('LOTE:')) || s;
+    const vencePart = parts.find(p => p.startsWith('VENCE:'));
+    
+    return vencePart ? (lotePart + '|' + vencePart) : lotePart;
   };
 
   const inv = {};
@@ -2974,7 +3025,8 @@ function renderInventario(onlyMinimo) {
 
   KARDEX_DATA.forEach(r => {
     if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
-    if (r.tipo === 'Ajuste (Anulación)') return;
+    const t = String(r.tipo||'').trim().toLowerCase();
+    if (t === 'ajuste (anulación)') return;
     
     const normNombre = (s) => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
       .trim().toUpperCase().replace(/\s+/g,' ')
@@ -3002,12 +3054,12 @@ function renderInventario(onlyMinimo) {
       }
     }
     
-    if(r.tipo === 'Entrada' || r.tipo === 'Prestamo') inv[key].entradas += Number(r.entrada||0);
-    if(r.tipo === 'Salida' || r.tipo === 'Descarte' || r.tipo === 'Devolucion') {
+    if(t === 'entrada' || t === 'prestamo') inv[key].entradas += Number(r.entrada||0);
+    if(t === 'salida' || t === 'descarte' || t === 'devolucion') {
         inv[key].salidas += Number(r.salida||0);
-        if (isLast30 && r.tipo === 'Salida') inv[key].salidas30d += Number(r.salida||0);
+        if (isLast30 && t === 'salida') inv[key].salidas30d += Number(r.salida||0);
     }
-    if(String(r.tipo).includes('Ajuste')) {
+    if(t.includes('ajuste')) {
       inv[key].entradas += Number(r.entrada||0);
       inv[key].salidas += Number(r.salida||0);
     }
@@ -3021,9 +3073,10 @@ function renderInventario(onlyMinimo) {
       inv[key].lotes[lKey].loteOriginal = currentLote;
     }
     
-    if(r.tipo === 'Entrada' || r.tipo === 'Prestamo') inv[key].lotes[lKey].entradas += Number(r.entrada||0);
-    if(r.tipo === 'Salida' || r.tipo === 'Descarte' || r.tipo === 'Devolucion') inv[key].lotes[lKey].salidas += Number(r.salida||0);
-    if(String(r.tipo).includes('Ajuste')) {
+    const tLote = String(r.tipo||'').trim().toLowerCase();
+    if(tLote === 'entrada' || tLote === 'prestamo') inv[key].lotes[lKey].entradas += Number(r.entrada||0);
+    if(tLote === 'salida' || tLote === 'descarte' || tLote === 'devolucion') inv[key].lotes[lKey].salidas += Number(r.salida||0);
+    if(tLote.includes('ajuste')) {
       inv[key].lotes[lKey].entradas += Number(r.entrada||0);
       inv[key].lotes[lKey].salidas += Number(r.salida||0);
     }
@@ -3185,7 +3238,7 @@ function renderInventario(onlyMinimo) {
           if (l.loteOriginal && l.loteOriginal.includes('Vence:')) {
               const pVence = l.loteOriginal.split('|').find(px => px.includes('Vence:'));
               if (pVence) {
-                  const dArr = pVence.replace('Vence:', '').trim().split('/');
+                  const dArr = pVence.replace('Vence:', '').trim().split(/[-\/]/);
                   if (dArr.length === 3) {
                       const yy = dArr[2].length === 2 ? '20' + dArr[2] : dArr[2];
                       l.expDate = new Date(parseInt(yy), parseInt(dArr[1]) - 1, parseInt(dArr[0])).getTime();
@@ -3511,6 +3564,8 @@ function renderInventario(onlyMinimo) {
           } else if (r.tipo === 'Ajuste') {
               if (Number(r.entrada) > 0) { badgeText = 'AJUSTE (+)'; tipoColor = 'var(--green)'; }
               else if (Number(r.salida) > 0) { badgeText = 'AJUSTE (-)'; tipoColor = 'var(--orange)'; }
+          } else if (r.tipo === 'Entrada' && String(r.observacion).includes('RETORNO DE STOCK OPERATIVO')) {
+              badgeText = 'REINTEGRO';
           }
           
           let loteBadge = formatLoteBadge(r.lote);
@@ -3893,7 +3948,7 @@ window.renderPecosa = function() {
         let rawCod = (r.codigo && !String(r.codigo).startsWith('TEMP-') && String(r.codigo).trim() !== 'S/C') ? String(r.codigo).trim() : '';
         if (!rawCod && r.nombre) {
             let codOf = window.obtenerCodigoOficial(r.nombre);
-            if (codOf) rawCod = codOf;
+            if (codOf && codOf !== 'S/C') rawCod = codOf;
         }
         
         const normNombre = (s) => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
@@ -3937,7 +3992,7 @@ window.renderPecosa = function() {
         // Autocompletar código si estaba vacío o era TEMP
         if (!rawCod && prodName) {
             const codOf = window.obtenerCodigoOficial(prodName);
-            if (codOf) rawCod = codOf;
+            if (codOf && codOf !== 'S/C') rawCod = codOf;
             else {
                 const kMatch = KARDEX_DATA.find(k => k.nombre && k.nombre.replace(/\[.*?\]/g, '').trim().toUpperCase() === prodName.replace(/\[.*?\]/g, '').trim().toUpperCase());
                 if (kMatch && kMatch.codigo && !String(kMatch.codigo).startsWith('TEMP-') && String(kMatch.codigo).trim() !== 'S/C') {
@@ -4008,7 +4063,7 @@ window.renderPecosa = function() {
         KARDEX_DATA.forEach(r => {
             if (!r || (r.observacion && String(r.observacion).includes('[ANULADO]'))) return;
             let rCod = (r.codigo && !String(r.codigo).startsWith('TEMP-') && String(r.codigo).trim() !== 'S/C') ? String(r.codigo).trim() : '';
-            if (!rCod && r.nombre) { let c = window.obtenerCodigoOficial(r.nombre); if(c) rCod = c; }
+            if (!rCod && r.nombre) { let c = window.obtenerCodigoOficial(r.nombre); if(c && c !== 'S/C') rCod = c; }
             let rKey = rCod ? rCod : normNombrePecosa(r.nombre);
             
             if (rKey === key) {
@@ -4520,20 +4575,20 @@ window.agregarPecosaManual = function() {
         // Encontrar stock real calculándolo desde el Kardex
         let stockManual = 0;
         const normNombre = (s) => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase().replace(/\s+/g,' ').replace(/\bTUBOS\b/g,'TUBO').replace(/\bFRASCOS\b/g,'FRASCO');
-        let pKey = (cod && cod !== 'S/C') ? cod : window.obtenerCodigoOficial(nameToUse);
-        if (!pKey) pKey = normNombre(nameToUse);
+        
+        let pKey = (cod && String(cod).trim() !== '' && String(cod).trim() !== 'S/C' && !String(cod).startsWith('TEMP-')) ? String(cod).trim() : normNombre(nameToUse);
         
         KARDEX_DATA.forEach(r => {
             if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
-            let rawCod = (r.codigo && !String(r.codigo).startsWith('TEMP-') && String(r.codigo).trim() !== 'S/C') ? String(r.codigo).trim() : '';
-            if (!rawCod && r.nombre) { let c = window.obtenerCodigoOficial(r.nombre); if(c) rawCod = c; }
-            let rKey = rawCod ? rawCod : normNombre(r.nombre);
+            const tipo = String(r.tipo || '').trim().toLowerCase();
+            if (tipo === 'ajuste (anulación)') return;
+
+            let rKey = (r.codigo && String(r.codigo).trim() !== '' && String(r.codigo).trim() !== 'S/C' && !String(r.codigo).startsWith('TEMP-')) ? String(r.codigo).trim() : normNombre(r.nombre);
             
             if (rKey === pKey) {
-                const tipo = String(r.tipo || '').trim().toLowerCase();
                 if(tipo === 'entrada' || tipo === 'prestamo') stockManual += Number(r.entrada||0);
                 if(tipo === 'salida' || tipo === 'descarte' || tipo === 'devolucion') stockManual -= Number(r.salida||0);
-                if(tipo === 'ajuste' || tipo === 'ajuste (anulación)') {
+                if(tipo.includes('ajuste')) {
                     stockManual += Number(r.entrada||0);
                     stockManual -= Number(r.salida||0);
                 }
@@ -4544,7 +4599,7 @@ window.agregarPecosaManual = function() {
             let hCod = String(h.codigo || '').trim();
             if (hCod.startsWith('TEMP-') || hCod === 'S/C') hCod = '';
             let hName = String(h.producto || h.nombre || '').trim();
-            if (!hCod && hName) { let c = window.obtenerCodigoOficial(hName); if(c) hCod = c; }
+            if (!hCod && hName) { let c = window.obtenerCodigoOficial(hName); if(c && c !== 'S/C') hCod = c; }
             let hKey = hCod ? hCod : normNombre(hName);
             return hKey === pKey;
         });
@@ -4942,6 +4997,8 @@ window.exportBalanceMensual = async function(esPrevia = false) {
     let cats = {};
     
     const miniNombres = ['TUBO DE VIDRIO BIOQUIMICA', 'TUBO DE VIDRIO INMUNOLOGIA'];
+    const catFilterUI = document.getElementById('filter-cat') ? document.getElementById('filter-cat').value : 'Todas las categorias';
+    const searchUI = document.getElementById('searchKardex') ? document.getElementById('searchKardex').value.trim().toLowerCase() : '';
     
     KARDEX_DATA.forEach(r => {
       if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
@@ -4956,9 +5013,19 @@ window.exportBalanceMensual = async function(esPrevia = false) {
       if (rDate > endDate) return; 
       
       let cat = String(r.tipo2 || 'OTROS').toUpperCase();
+      if (catFilterUI !== 'ALL' && catFilterUI !== 'Todas las categorias' && cat !== catFilterUI.toUpperCase()) return;
+      if (searchUI) {
+         let nStr = String(r.nombre || '').toLowerCase();
+         let cStr = String(r.codigo || '').toLowerCase();
+         if (!nStr.includes(searchUI) && !cStr.includes(searchUI)) return;
+      }
+      
       if (!cats[cat]) cats[cat] = {};
       
-      let prodKey = String(r.codigo || 'SIN-COD');
+      let rawCod = (r.codigo && !String(r.codigo).startsWith('TEMP-') && String(r.codigo).trim() !== 'S/C') ? String(r.codigo).trim() : '';
+      if (!rawCod && r.nombre) { let c = window.obtenerCodigoOficial(r.nombre); if(c && c !== 'S/C') rawCod = c; }
+      const normNombre = (s) => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase().replace(/\s+/g,' ').replace(/\bTUBOS\b/g,'TUBO').replace(/\bFRASCOS\b/g,'FRASCO').replace(/\[.*?\]/g,'').trim();
+      let prodKey = rawCod ? rawCod : normNombre(r.nombre);
       
       let uPres = 'UNIDAD';
       if (r.presentacion) uPres = r.presentacion.toUpperCase();
@@ -5256,16 +5323,19 @@ window.exportBalanceMensual = async function(esPrevia = false) {
   }
 };
 
-window.exportVencimientos = function(esPrevia = false) {
+window.exportVencimientos = function(esPrevia = false, soloAlertas = false) {
   let lotes = {};
   KARDEX_DATA.forEach(r => {
     if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
     if (r.tipo === 'Ajuste (Anulación)') return;
     const l = r.lote || '';
     if (l) {
-      if (!lotes[l]) lotes[l] = { stock: 0, codigo: r.codigo, nombre: r.nombre, cat: r.tipo2 };
-      if (r.tipo === 'Entrada' || r.tipo === 'Ajuste') lotes[l].stock += Number(r.entrada || 0);
-      if (r.tipo === 'Salida' || r.tipo === 'Ajuste') lotes[l].stock -= Number(r.salida || 0);
+      const codKey = (r.codigo && String(r.codigo).trim() !== '' && String(r.codigo).trim() !== 'S/C') ? String(r.codigo).trim() : String(r.nombre).trim().toUpperCase();
+      const k = codKey + '||' + l;
+      if (!lotes[k]) lotes[k] = { stock: 0, codigo: r.codigo, nombre: r.nombre, cat: r.tipo2, loteStr: l };
+      const t = String(r.tipo||'').trim().toLowerCase();
+      if (t === 'entrada' || t === 'prestamo' || t === 'ajuste' || t === 'devolucion') lotes[k].stock += Number(r.entrada || 0);
+      if (t === 'salida' || t === 'descarte' || t === 'ajuste') lotes[k].stock -= Number(r.salida || 0);
     }
   });
   
@@ -5273,41 +5343,44 @@ window.exportVencimientos = function(esPrevia = false) {
   today.setHours(0,0,0,0);
   let rowsExp = [];
   
-  Object.keys(lotes).forEach(loteStr => {
-    const obj = lotes[loteStr];
+  Object.keys(lotes).forEach(k => {
+    const obj = lotes[k];
     if (obj.stock > 0) {
-      const pVence = loteStr.split('|').find(p => p.includes('Vence:'));
+      const pVence = obj.loteStr.split('|').find(p => p.includes('Vence:'));
       if (pVence) {
-        const dArr = pVence.replace('Vence:', '').trim().split('/');
+        const dArr = pVence.replace('Vence:', '').trim().split(/[-\/]/);
         if (dArr.length === 3) {
           const yy = dArr[2].length === 2 ? '20' + dArr[2] : dArr[2];
           const expDate = new Date(parseInt(yy), parseInt(dArr[1]) - 1, parseInt(dArr[0]));
           const diffDays = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
           
-          if (diffDays <= 90) { 
-             rowsExp.push({ 
-               codigo: obj.codigo, nombre: obj.nombre, cat: obj.cat, 
-               loteCorto: loteStr.split('|')[0].trim(), 
-               fechaVenc: `${dArr[0]}/${dArr[1]}/${yy}`, 
-               diasRestantes: diffDays, 
-               stock: obj.stock 
-             });
+          let estadoStr = 'Vigente';
+          if (diffDays <= 30) estadoStr = 'Crítico';
+          else if (diffDays <= 90) estadoStr = 'Próximo';
+          
+          if (!soloAlertas || diffDays <= 90) {
+            rowsExp.push({ 
+              codigo: obj.codigo, nombre: obj.nombre, cat: obj.cat, 
+              loteCorto: obj.loteStr.split('|')[0].trim(), 
+              fechaVenc: `${dArr[0]}/${dArr[1]}/${yy}`, 
+              diasRestantes: diffDays, 
+              stock: obj.stock,
+              estado: estadoStr
+            });
           }
         }
       }
     }
   });
   
-  if(rowsExp.length === 0) return showCustomAlert('No hay lotes que venzan en los próximos 90 días.', 'Atención');
+  const repTitle = soloAlertas ? 'REPORTE DE ALERTAS DE VENCIMIENTO (Próx. 90 Días)' : 'REPORTE GENERAL DE VENCIMIENTOS Y LOTES';
+  const downName = soloAlertas ? 'Vencimientos_Críticos.xls' : 'Reporte_Vencimientos_Lotes.xls';
+
+  if(rowsExp.length === 0) return showCustomAlert(soloAlertas ? 'No hay lotes que venzan en los próximos 90 días.' : 'No hay lotes con fecha de vencimiento registrada.', 'Atención');
   
   rowsExp.sort((a,b) => a.diasRestantes - b.diasRestantes);
   
   const rowsHtml = rowsExp.map(r => {
-    let estado = 'Por Vencer';
-    if(r.diasRestantes < 0) estado = 'VENCIDO';
-    else if(r.diasRestantes === 0) estado = 'Vence HOY';
-    else if(r.diasRestantes <= 30) estado = 'Crítico';
-    
     return `<tr>
       <td style="border:1px solid #000;">${r.codigo}</td>
       <td style="border:1px solid #000;">${r.nombre}</td>
@@ -5315,7 +5388,7 @@ window.exportVencimientos = function(esPrevia = false) {
       <td style="border:1px solid #000;">${r.loteCorto}</td>
       <td style="border:1px solid #000; text-align:center;">${r.fechaVenc}</td>
       <td style="border:1px solid #000; text-align:center;">${r.diasRestantes}</td>
-      <td style="border:1px solid #000; text-align:center; font-weight:bold;">${estado}</td>
+      <td style="border:1px solid #000; text-align:center; font-weight:bold;">${r.estado}</td>
       <td style="border:1px solid #000; text-align:center; font-weight:bold;">${r.stock}</td>
     </tr>`;
   }).join('');
@@ -5331,7 +5404,7 @@ window.exportVencimientos = function(esPrevia = false) {
             <col width="10%"><col width="5%">
           </colgroup>
           <tr>
-            <th colspan="8" style="font-size:18px; font-weight:bold; text-align:center; padding:10px; color:#000;">REPORTE DE ALERTAS DE VENCIMIENTO (Próx. 90 Días)</th>
+            <th colspan="8" style="font-size:18px; font-weight:bold; text-align:center; padding:10px; color:#000;">${repTitle}</th>
           </tr>
           <tr>
             <th style="background-color: #f0f0f0; color: #000; border:1px solid #000; padding:8px; font-weight:bold;">Código</th>
@@ -5350,17 +5423,17 @@ window.exportVencimientos = function(esPrevia = false) {
   `;
   
   if (esPrevia) {
-    showPreview("Reporte de Vencimientos", xlsHtml, () => {
+    showPreview(soloAlertas ? "Alertas Críticas" : "Reporte de Vencimientos", xlsHtml, () => {
       const blob = new Blob([xlsHtml], { type: 'application/vnd.ms-excel' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = `Vencimientos_Críticos.xls`; a.click();
+      a.href = url; a.download = downName; a.click();
     });
   } else {
     const blob = new Blob([xlsHtml], { type: 'application/vnd.ms-excel' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = `Vencimientos_Críticos.xls`; a.click();
+    a.href = url; a.download = downName; a.click();
   }
 };
 
@@ -5713,24 +5786,83 @@ window.exportPrestamosCSV = function(esPrevia = false) {
 window.exportInventarioCSV = function(esPrevia = false) {
   if(KARDEX_DATA.length === 0) return showCustomAlert('No hay datos para exportar.', 'Atención');
   const inv = {};
+  
+  const extractLoteKey = (loteStr) => {
+    if (!loteStr) return 'SIN_LOTE';
+    const s = String(loteStr).trim().toUpperCase();
+    if (!s.includes('LOTE:')) return s;
+    const parts = s.split('|').map(p => p.trim());
+    const lotePart = parts.find(p => p.startsWith('LOTE:')) || s;
+    const vencePart = parts.find(p => p.startsWith('VENCE:'));
+    return vencePart ? (lotePart + '|' + vencePart) : lotePart;
+  };
+  
   KARDEX_DATA.forEach(r => {
     if (!r) return;
-    if (r.observacion && String(r.observacion).includes('[ANULADO]')) return; // Ignorar anulados
-    const codKey = (r.codigo && String(r.codigo).trim() !== '' && String(r.codigo).trim() !== 'S/C') ? String(r.codigo).trim() : String(r.nombre).trim().toUpperCase();
-    const key = `${codKey}||${r.lote || ''}`;
-    if(!inv[key]) inv[key] = { codigo: r.codigo, nombre: r.nombre, cat: r.tipo2, lote: r.lote||'', entradas: 0, salidas: 0 };
-    if(r.tipo === 'Entrada' || r.tipo === 'Prestamo') inv[key].entradas += Number(r.entrada||0);
-    if(r.tipo === 'Salida' || r.tipo === 'Descarte' || r.tipo === 'Devolucion') inv[key].salidas += Number(r.salida||0);
+    if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
+    const t = String(r.tipo||'').trim().toLowerCase();
+    if (t === 'ajuste (anulación)') return;
+
+    const normNombre = (s) => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase().replace(/\s+/g,' ').replace(/\bTUBOS\b/g,'TUBO').replace(/\bFRASCOS\b/g,'FRASCO').replace(/\[.*?\]/g,'').trim();
+    const codKey = (r.codigo && String(r.codigo).trim() !== '' && String(r.codigo).trim() !== 'S/C') ? String(r.codigo).trim() : normNombre(r.nombre);
+    
+    if(!inv[codKey]) {
+      inv[codKey] = { codigo: r.codigo, nombre: r.nombre, cat: r.tipo2, lotes: {} };
+    }
+    
+    const lKey = extractLoteKey(r.lote);
+    if(!inv[codKey].lotes[lKey]) {
+      inv[codKey].lotes[lKey] = { loteOriginal: r.lote||'', entradas: 0, salidas: 0 };
+    }
+    
+    const currentLote = r.lote || '';
+    if (currentLote.includes('|') || currentLote.length > inv[codKey].lotes[lKey].loteOriginal.length) {
+      inv[codKey].lotes[lKey].loteOriginal = currentLote;
+    }
+    
+    if(t === 'entrada' || t === 'prestamo') inv[codKey].lotes[lKey].entradas += Number(r.entrada||0);
+    if(t === 'salida' || t === 'descarte' || t === 'devolucion') inv[codKey].lotes[lKey].salidas += Number(r.salida||0);
+    if(t.includes('ajuste')) {
+        inv[codKey].lotes[lKey].entradas += Number(r.entrada||0);
+        inv[codKey].lotes[lKey].salidas += Number(r.salida||0);
+    }
   });
-  const rowsHtml = Object.values(inv).map(v => {
-    const stock = v.entradas - v.salidas;
-    return `<tr>
-      <td style="border:1px solid #000;">${v.codigo || ''}</td>
-      <td style="border:1px solid #000;">${v.nombre || ''}</td>
-      <td style="border:1px solid #000;">${v.cat || ''}</td>
-      <td style="border:1px solid #000;">${v.lote || ''}</td>
-      <td style="border:1px solid #000; text-align:center; font-weight:bold;">${stock}</td>
+  
+  const rowsHtml = Object.values(inv).map(prod => {
+    const lotes = Object.values(prod.lotes);
+    const numLotes = lotes.length;
+    if (numLotes === 0) return '';
+    
+    let html = '';
+    let totalStock = 0;
+    
+    lotes.forEach((lote, index) => {
+      const stock = lote.entradas - lote.salidas;
+      totalStock += stock;
+      const stockColor = stock < 0 ? 'color:#be123c;' : (stock > 0 ? 'color:#047857;' : '');
+      if (index === 0) {
+        html += `<tr>
+          <td style="border:1px solid #000; vertical-align:middle; text-align:center;" rowspan="${numLotes + 1}">${prod.codigo || ''}</td>
+          <td style="border:1px solid #000; vertical-align:middle;" rowspan="${numLotes + 1}">${prod.nombre || ''}</td>
+          <td style="border:1px solid #000; vertical-align:middle;" rowspan="${numLotes + 1}">${prod.cat || ''}</td>
+          <td style="border:1px solid #000; padding-left:5px;">${lote.loteOriginal || ''}</td>
+          <td style="border:1px solid #000; text-align:center; font-weight:bold; ${stockColor}">${stock}</td>
+        </tr>`;
+      } else {
+        html += `<tr>
+          <td style="border:1px solid #000; padding-left:5px;">${lote.loteOriginal || ''}</td>
+          <td style="border:1px solid #000; text-align:center; font-weight:bold; ${stockColor}">${stock}</td>
+        </tr>`;
+      }
+    });
+    
+    const totalColor = totalStock < 0 ? 'color:#be123c;' : (totalStock > 0 ? 'color:#047857;' : '');
+    html += `<tr>
+      <td style="border:1px solid #000; text-align:right; font-weight:bold; background-color:#f0f9ff; padding-right:10px;">STOCK TOTAL:</td>
+      <td style="border:1px solid #000; text-align:center; font-weight:bold; background-color:#f0f9ff; ${totalColor} font-size:1.1em;">${totalStock}</td>
     </tr>`;
+    
+    return html;
   }).join('');
   
   const xlsHtml = `
@@ -5903,7 +6035,7 @@ function renderTable() {
             let bgAjuste = isAjuste ? 'background:rgba(245,158,11,0.08);' : (r.tipo === 'Prestamo' || r.tipo === 'Devolucion' ? 'background:rgba(139,92,246,0.08);' : '');
             let badgeText = r.tipo ? String(r.tipo).toUpperCase() : '—';
             
-            if (r.tipo === 'Ajuste (Anulación)') {
+            if (r.tipo === 'Ajuste (Anulación)' || String(r.tipo).includes('Anulaci')) {
                tipoClass = 'salida';
                tipoIcon = '🚫';
                badgeText = 'ANULACIÓN';
@@ -5912,6 +6044,10 @@ function renderTable() {
                tipoClass = r.entrada > 0 ? 'entrada' : 'salida';
                tipoIcon = '↻';
                badgeText = r.entrada > 0 ? 'AJUSTE (+)' : 'AJUSTE (-)';
+            } else if (r.tipo === 'Entrada' && String(r.observacion).includes('RETORNO DE STOCK OPERATIVO')) {
+               tipoClass = 'entrada';
+               tipoIcon = '🔄';
+               badgeText = 'REINTEGRO';
             }
             
             const relativeTime = timeAgo(r.fecha, r.hora);
@@ -6015,8 +6151,8 @@ window.toggleSort = function() {
 window.applyFilters = function() {
   try {
     // Limpieza agresiva de filas vacías (borradas manualmente en Google Sheets)
-    if (window.KARDEX_DATA) {
-        window.KARDEX_DATA = window.KARDEX_DATA.filter(r => r && r.nombre && String(r.nombre).trim() !== '');
+    if (KARDEX_DATA) {
+        KARDEX_DATA = KARDEX_DATA.filter(r => r && r.nombre && String(r.nombre).trim() !== '');
     }
 
     const sInput = document.getElementById('search-input');
@@ -6203,10 +6339,12 @@ function updateKPIs() {
       if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
       
       // Inventario
-      let codigoStr = (r.codigo && String(r.codigo).trim() !== '' && String(r.codigo).trim() !== 'S/C') ? String(r.codigo).trim() : String(r.nombre).trim().toUpperCase();
-      if (!inv[codigoStr]) inv[codigoStr] = { nombre: r.nombre, stock: 0, salidas30d: 0, cat: r.tipo2 };
-      inv[codigoStr].stock += Number(r.entrada || 0);
-      inv[codigoStr].stock -= Number(r.salida || 0);
+      let codStr = (r.codigo && String(r.codigo).trim() !== '' && String(r.codigo).trim() !== 'S/C') ? String(r.codigo).trim() : '';
+      if (!codStr && r.nombre) { let c = window.obtenerCodigoOficial(r.nombre); if (c && c !== 'S/C') codStr = c; }
+      if (!codStr) codStr = String(r.nombre).trim().toUpperCase();
+      if (!inv[codStr]) inv[codStr] = { nombre: r.nombre, stock: 0, salidas30d: 0, cat: r.tipo2 };
+      inv[codStr].stock += Number(r.entrada || 0);
+      inv[codStr].stock -= Number(r.salida || 0);
       
       let dArr = String(r.fecha||'').split('/');
       let rDate = new Date();
@@ -6223,11 +6361,11 @@ function updateKPIs() {
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
         
         if (diffDays <= 90) {
-           inv[codigoStr].salidas90d = (inv[codigoStr].salidas90d || 0) + Number(r.salida||0);
+           inv[codStr].salidas90d = (inv[codStr].salidas90d || 0) + Number(r.salida||0);
         }
         
         if (diffDays <= 30) {
-           inv[codigoStr].salidas30d += Number(r.salida||0);
+           inv[codStr].salidas30d += Number(r.salida||0);
         }
       }
     });
@@ -6255,19 +6393,25 @@ function updateKPIs() {
       if (!r) return;
       if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
       if (r.tipo === 'Ajuste (Anulación)') return;
-      const key = r.lote !== undefined && r.lote !== null ? String(r.lote) : null;
-      if (!key) return;
-      if (!balancesLotes[key]) balancesLotes[key] = 0;
-      balancesLotes[key] += Number(r.entrada || 0);
-      balancesLotes[key] -= Number(r.salida || 0);
+      if (!r.lote) return;
+      
+      const normCod = r.codigo && r.codigo !== 'S/C' && r.codigo !== '' ? r.codigo.toLowerCase().trim() : String(r.nombre||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+      const lkBase = String(r.lote).split('|')[0].toLowerCase().replace(/[^a-z0-9]/g, '') || 'sinlote';
+      const pVenceStr = String(r.lote).split('|').find(p => p.toUpperCase().includes('VENCE'));
+      const lkVence = pVenceStr ? '_' + pVenceStr.trim().toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+      const key = normCod + '_' + lkBase + lkVence;
+      
+      if (!balancesLotes[key]) balancesLotes[key] = { stock: 0, loteOriginal: String(r.lote) };
+      balancesLotes[key].stock += Number(r.entrada || 0);
+      balancesLotes[key].stock -= Number(r.salida || 0);
     });
     
     let lotesRiesgoCount = 0;
-    for (let l in balancesLotes) {
-      if (balancesLotes[l] > 0) {
-        let pVence = l.split('|').find(p => p.includes('Vence:'));
+    for (let k in balancesLotes) {
+      if (balancesLotes[k].stock > 0) {
+        let pVence = balancesLotes[k].loteOriginal.split('|').find(p => p.toUpperCase().includes('VENCE:'));
         if(pVence) {
-          const dArr = pVence.replace('Vence:', '').trim().split('/');
+          const dArr = pVence.toUpperCase().replace('VENCE:', '').trim().split(/[-\/]/);
           if(dArr.length === 3) {
              const yy = dArr[2].length === 2 ? '20' + dArr[2] : dArr[2];
              const vDate = new Date(parseInt(yy), parseInt(dArr[1]) - 1, parseInt(dArr[0]));
@@ -6496,10 +6640,16 @@ function renderDashboardAlerts() {
       
       // Total product stock
       let rawCodAlert = (r.codigo && !String(r.codigo).startsWith('TEMP-') && String(r.codigo).trim() !== '' && String(r.codigo).trim() !== 'S/C') ? String(r.codigo).trim() : '';
-      if (!rawCodAlert && r.nombre) { let c = window.obtenerCodigoOficial(r.nombre); if(c) rawCodAlert = c; }
+      if (!rawCodAlert && r.nombre) { let c = window.obtenerCodigoOficial(r.nombre); if(c && c !== 'S/C') rawCodAlert = c; }
       let codStr = rawCodAlert ? rawCodAlert : normNombreAlert(r.nombre);
       
-      if (!inv[codStr]) inv[codStr] = { stock: 0, nombre: r.nombre };
+      if (!inv[codStr]) inv[codStr] = { stock: 0, nombre: r.nombre, tieneMovimientoReal: false };
+      
+      // If it's not the initial catalog population, it's a real movement
+      if (r.lote !== "Lote: INICIAL | Marca: S/M" && r.lote !== "Lote: INICIAL | Marca: ") {
+         inv[codStr].tieneMovimientoReal = true;
+      }
+
       const tipoAlert = String(r.tipo || '').trim();
       if (tipoAlert === 'Entrada' || tipoAlert === 'Prestamo') inv[codStr].stock += Number(r.entrada || 0);
       if (tipoAlert === 'Salida' || tipoAlert === 'Descarte' || tipoAlert === 'Devolucion') inv[codStr].stock -= Number(r.salida || 0);
@@ -6512,14 +6662,15 @@ function renderDashboardAlerts() {
       // Stock by Lote (Normalizado por producto)
       const lRaw = r.lote !== undefined && r.lote !== null ? String(r.lote) : '';
       if (lRaw) {
-        const normL = codStr + '_' + lRaw.split('|')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-        if (!lotes[normL]) lotes[normL] = { stock: 0, codigo: r.codigo, nombre: r.nombre, loteOriginal: lRaw };
+        const normL = codStr + '_' + lRaw.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (!lotes[normL]) lotes[normL] = { stock: 0, codigo: r.codigo, nombre: r.nombre, loteOriginal: lRaw, codStr: codStr };
         if (lRaw.length > lotes[normL].loteOriginal.length) {
             lotes[normL].loteOriginal = lRaw;
         }
-        if (r.tipo === 'Entrada' || r.tipo === 'Prestamo') lotes[normL].stock += Number(r.entrada || 0);
-        if (r.tipo === 'Salida' || r.tipo === 'Descarte' || r.tipo === 'Devolucion') lotes[normL].stock -= Number(r.salida || 0);
-        if (r.tipo === 'Ajuste') {
+        const tipoLote = String(r.tipo||'').trim().toLowerCase();
+        if (tipoLote === 'entrada' || tipoLote === 'prestamo') lotes[normL].stock += Number(r.entrada || 0);
+        if (tipoLote === 'salida' || tipoLote === 'descarte' || tipoLote === 'devolucion') lotes[normL].stock -= Number(r.salida || 0);
+        if (tipoLote.includes('ajuste')) {
           lotes[normL].stock += Number(r.entrada || 0);
           lotes[normL].stock -= Number(r.salida || 0);
         }
@@ -6535,11 +6686,12 @@ function renderDashboardAlerts() {
     
     Object.keys(lotes).forEach(normLKey => {
       const obj = lotes[normLKey];
-      if (obj.stock > 0) {
+      // Solo alerta vencimiento si el LOTE tiene stock Y el PRODUCTO GLOBAL tiene stock
+      if (obj.stock > 0 && inv[obj.codStr] && inv[obj.codStr].stock > 0) {
         const loteStr = obj.loteOriginal;
         const pVence = loteStr.split('|').find(p => p.includes('Vence:'));
         if (pVence) {
-          const dArr = pVence.replace('Vence:', '').trim().split('/');
+          const dArr = pVence.replace('Vence:', '').trim().split(/[-\/]/);
           if (dArr.length === 3) {
             let yInt = parseInt(dArr[2].replace(/\D/g, ''));
             if (!isNaN(yInt)) {
@@ -6580,6 +6732,8 @@ function renderDashboardAlerts() {
     // -- STOCK --
     let alertsHtmlStock = '';
     let alertsCountStock = 0;
+    
+    // El usuario prefiere ver la lista completa de sus productos en 0 para saber qué falta comprar
     let stockList = Object.values(inv).filter(v => v.stock <= 50).sort((a,b) => a.stock - b.stock);
     
     stockList.forEach(item => {
@@ -6604,12 +6758,12 @@ function renderDashboardAlerts() {
     const activeNav = document.querySelector('.nav-item.active, .menu-item.active');
     const isResumen = activeNav && (activeNav.textContent.toLowerCase().includes('resumen total') || activeNav.textContent.toLowerCase().includes('dashboard'));
     
-    if ((alertsCountVence > 0 || alertsCountStock > 0) && isResumen) {
+    if (isResumen) {
       countSpanVence.textContent = alertsCountVence;
       containerVence.innerHTML = alertsHtmlVence || '<div style="color:var(--muted); font-size:0.85rem; text-align:center; padding:15px; background:rgba(255,255,255,0.02); border-radius:8px;">No hay vencimientos próximos. 🟢</div>';
       
       countSpanStock.textContent = alertsCountStock;
-      containerStock.innerHTML = alertsHtmlStock || '<div style="color:var(--muted); font-size:0.85rem; text-align:center; padding:15px; background:rgba(255,255,255,0.02); border-radius:8px;">Stock en niveles óptimos. 🟢</div>';
+      containerStock.innerHTML = alertsHtmlStock || '<div style="color:var(--muted); font-size:0.85rem; text-align:center; padding:15px; background:rgba(255,255,255,0.02); border-radius:8px;">Sin alertas de stock pendientes. ✅</div>';
       
       panel.style.display = 'block';
     } else {
@@ -6632,11 +6786,12 @@ window.filterUsuariosDropdown = function(tipo) {
   let options = [];
   let addedNames = new Set();
   
-  let usuariosLocales = [...(window.ALL_USERS || [])];
-  
-  // Asegurar Dr. Aarón
-  if (!usuariosLocales.some(u => u && u.nombre && (u.nombre.includes('Aarón') || u.nombre.includes('Aaron')))) {
-      usuariosLocales.push({ nombre: 'Dr. Aarón', rol: 'Personal de Almacén' });
+  let usuariosLocales = [];
+  if (typeof usuariosConfig !== 'undefined' && usuariosConfig.length > 0) {
+      usuariosLocales = [...usuariosConfig];
+  }
+  if (window.ALL_USERS && window.ALL_USERS.length > 0) {
+      usuariosLocales = [...usuariosLocales, ...window.ALL_USERS];
   }
 
   const cleanName = (n) => {
@@ -6652,10 +6807,9 @@ window.filterUsuariosDropdown = function(tipo) {
      if (!nombreNorm || addedNames.has(nombreNorm)) return;
      
      let rol = String(u.rol || 'Personal de Almacén').trim();
-     let rolNorm = rol.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
      
      // Evaluar permisos reales basados en el ROL del perfil
-     let isSoloMermas = (rolNorm.includes('TECNICO') || rolNorm.includes('TEC') || rolNorm.includes('FLEBOTOMISTA')) && !rolNorm.includes('ALMAC');
+     let isSoloMermas = window.isTechRole ? window.isTechRole(rol) : false;
      let hasFullAccess = !isSoloMermas;
      
      if (tipo === 'Descarte') {
@@ -6769,7 +6923,11 @@ window.openModal = function(tipo = 'Entrada') {
   if(dlLotes) dlLotes.innerHTML = '';
   
   const pills = document.querySelectorAll('.pill-group .pill');
-  pills.forEach(p => p.classList.remove('active'));
+  pills.forEach(p => {
+    p.classList.remove('active');
+    p.style.opacity = '1';
+    p.style.pointerEvents = 'auto';
+  });
   
   let activePill;
   if(tipo === 'Entrada') activePill = pills[0];
@@ -6851,13 +7009,13 @@ window.guardarMovimientoContingencia = function(e) {
   
   const usuarioName = document.getElementById('c-usuario').value;
   let userObj = null;
-  if (window.usuariosConfig && window.usuariosConfig.length > 0) {
-      userObj = window.usuariosConfig.find(u => u.nombre === usuarioName);
+  if (usuariosConfig && usuariosConfig.length > 0) {
+      userObj = usuariosConfig.find(u => u.nombre === usuarioName);
   } else if (window.ALL_USERS && window.ALL_USERS.length > 0) {
       userObj = window.ALL_USERS.find(u => u.nombre === usuarioName);
   }
   
-  if (userObj && (userObj.rol === "Téc. de Laboratorio" || userObj.rol === "Flebotomista")) {
+  if (userObj && window.isTechRole(userObj.rol)) {
     showCustomAlert("Tu perfil solo tiene autorización para registrar Mermas. No puedes registrar movimientos de Contingencia.", "Acceso Denegado", true);
     return;
   }
@@ -6996,14 +7154,14 @@ window.guardarMovimiento = function(e) {
   const usuarioSelect = document.getElementById('m-usuario');
   const usuarioName = usuarioSelect.value;
   let userObj = null;
-  if (window.usuariosConfig && window.usuariosConfig.length > 0) {
-      userObj = window.usuariosConfig.find(u => u.nombre === usuarioName);
+  if (usuariosConfig && usuariosConfig.length > 0) {
+      userObj = usuariosConfig.find(u => u.nombre === usuarioName);
   } else if (window.ALL_USERS && window.ALL_USERS.length > 0) {
       userObj = window.ALL_USERS.find(u => u.nombre === usuarioName);
   }
   const tipoM = document.getElementById('m-tipo').value;
   
-  if (userObj && (userObj.rol === "Téc. de Laboratorio" || userObj.rol === "Flebotomista")) {
+  if (userObj && window.isTechRole(userObj.rol)) {
     if (tipoM !== "Descarte") {
       showCustomAlert("Tu perfil solo tiene autorización para registrar Mermas (Fallas/Descartes).", "Acceso Denegado", true);
       return;
@@ -7396,12 +7554,12 @@ window.confirmarAnulacion = function() {
   try {
     const usuario = document.getElementById('anular-usuario').value;
     let userObj = null;
-    if (window.usuariosConfig && window.usuariosConfig.length > 0) {
-        userObj = window.usuariosConfig.find(u => u.nombre === usuario);
+    if (usuariosConfig && usuariosConfig.length > 0) {
+        userObj = usuariosConfig.find(u => u.nombre === usuario);
     } else if (window.ALL_USERS && window.ALL_USERS.length > 0) {
         userObj = window.ALL_USERS.find(u => u.nombre === usuario);
     }
-    if (userObj && (userObj.rol === "Téc. de Laboratorio" || userObj.rol === "Flebotomista")) {
+    if (userObj && window.isTechRole(userObj.rol)) {
       showCustomAlert("Tu perfil no tiene permisos para anular movimientos.", "Acceso Denegado", true);
       return;
     }
@@ -7583,133 +7741,190 @@ if(ctxCatBar) {
 
 // CATÁLOGO OFICIAL DE CÓDIGOS (MATERIALES DE ESCRITORIO)
 window.CODIGOS_OFICIALES_ESCRITORIO = {
-  "BOLIGRAFO - AZUL": "716000010208",
-  "BOLIGRAFO - ROJO": "716000010187",
-  "BOLIGRAFO - NEGRO": "716000010209",
-  "PAPEL BOND 80G": "717200050224",
-  "LIBRO ACTAS -DE 200H.": "717200140150",
-  "LIBRO ACTAS -DE 400H.": "717200140151",
-  "CLIP DE METAL": "718500050032",
-  "GRAPA 26 X 6": "718500080026",
-  "ACOFASTER": "718500100017",
-  "LIGA DE JEBE": "718500110025",
-  "CINTA - CHICA": "710300010048",
-  "CINTA - AMBALAJE": "710300010026",
-  "GOMA BARRA": "710300060058",
-  "ARCHIVADORES PALANCA": "710600010076",
-  "CORRECTOR": "711100030001",
-  "ENGRAPADOR DE METAL": "715000110033",
-  "REGLA PLASTICA": "715000190001",
-  "ESPONJERO": "715000240003",
-  "LAPIZ NEGRO": "716000040045",
-  "PLUMON -GRUESO-NEGRO IND.": "716000060375",
-  "PLUMON -ACR.GRUESO-ROJO": "716000060405",
-  "PLUMON -ACR.GRUESO-AZUL": "716000060421",
-  "PLUMON -ACR.GRUESO-NEGRO": "716000060423",
-  "PLUMON -ACR.GRUESO-VERDE": "716000060424",
-  "TAMPON-CUBIERTA-ROJO": "716000090046",
-  "TAMPON-CUBIERTA-AZUL": "716000090048",
-  "TINTA PARA TAMPON-ROJO": "716000160015",
-  "RESALTADOR": "716000060482"
+  "AGUJAS DESCARTABLES 20 X 1": "S/C",
+  "AGUJAS DESCARTABLES 23 X 1": "S/C",
+  "AGUJAS VACUTAINER 21 X 1/2": "S/C",
+  "ALCOHOL GEL": "S/C",
+  "ALCOHOL PURO 70°": "S/C",
+  "ALGODÓN x 500 GR": "S/C",
+  "ALITAS VACUTAINER SAFETY-LOK 23 X 3/4": "S/C",
+  "ARCHIVADOR PLASTIFICADO": "S/C",
+  "BOLIGRAFO TINTA FINA COLOR AZUL": "S/C",
+  "BOLIGRAFO TINTA FINA COLOR NEGRO": "S/C",
+  "BOLIGRAFO TINTA FINA COLOR ROJO": "S/C",
+  "BOLSA DE PLASTICO NEGRA x 100": "S/C",
+  "BOLSA DE PLASTICO ROJA x 100": "S/C",
+  "BOLSAS COLECTORA PARA ORINA 50 ML": "S/C",
+  "BOTAS PROTECTORAS DE CALZADO": "S/C",
+  "CAJAS PARA TRANSPORTE DE MUESTRAS": "S/C",
+  "CAPILAR PARA HEMATOCRITO CON HEPARINA X 100": "S/C",
+  "CAPUCHONES CON EXPULSADOR HOLDER (BD)": "S/C",
+  "CHAQUETA TALLA XL": "S/C",
+  "CINTA ADHESIVA DELGADA": "S/C",
+  "CLIPS METALICO": "S/C",
+  "CORRECTOR COLOR BLANCO": "S/C",
+  "CUADERNO DE CARGO": "S/C",
+  "ENGRAPADOR DE METAL": "S/C",
+  "ESPARADRAPO": "S/C",
+  "FASTER": "S/C",
+  "FOLDER CARTULINA AZUL": "S/C",
+  "FRACOS PARA CELULAS LE (HEMATOLOGIA)": "S/C",
+  "FRASCO BACTEC PARA HEMOCULTIVOS": "S/C",
+  "GASA FRACCIONADA ESTERIL 5X5 cm": "S/C",
+  "GLUCONATO DE CLORHEXIDINA 2% EN ESPUMA X 1 Lt.": "S/C",
+  "GORRO DESCARTABLE DE ENFERMERA": "S/C",
+  "GRAPAS": "S/C",
+  "GUANTES DE NITRILO DESCART. M CAJA X 100 UNIDADES": "S/C",
+  "GUANTES DE NITRILO DESCART. S CAJA X 100 UNIDADES": "S/C",
+  "JERINGA DESC. 5 ML C/AGUJA DE 21x1 1/2": "S/C",
+  "KIT CHAQUETA Y PANTALON TALLA L": "S/C",
+  "KIT CHAQUETA Y PANTALON TALLA M": "S/C",
+  "LAMINAS PARA TEST DE GRAHAM (MICROBIOLOGIA)": "S/C",
+  "LAMINAS PORTA OBJETO DE VIDRIO (HEMATOLOGIA)": "S/C",
+  "LANCETAS 1.8 DESCARTABLES (200 UNIDADES)": "S/C",
+  "LAPIZ DE CERA PARA VIDRIO AZUL CAJA X 10 UNIDADES": "S/C",
+  "LAPIZ DE CERA PARA VIDRIO ROJO CAJA X 10 UNIDADES": "S/C",
+  "LEJIA X 500 Ml": "S/C",
+  "MAMELUCO DESCARTABLE T/L": "S/C",
+  "MAMELUCO DESCARTABLE T/M": "S/C",
+  "MANDILON DESCARTABLE T/L": "S/C",
+  "MASCARILLA KN95": "S/C",
+  "MASCARILLAS DESCARTABLES x 50 und": "S/C",
+  "PAPEL BOND 80 gr TAMAÑO A4": "S/C",
+  "PAPEL BOND CORTADO TAMAÑO A4": "S/C",
+  "PAPEL DE FILTRO CORRIENTE": "S/C",
+  "PAPEL TOALLA DOBLADO PQT. x 200 HOJAS (ELITE)": "S/C",
+  "PAPEL TOALLA DOBLADO PQT. x 200 HOJAS (HTOOLS)": "S/C",
+  "PAPEL TOALLA DOBLADO PQT. x 200 HOJAS (SFOLL)": "S/C",
+  "PLACA DE CERA PARA SELLADO DE CAPILARES": "S/C",
+  "PROTECTORES OCULARES": "S/C",
+  "REGLA PLASTICA DE 30 CM": "S/C",
+  "RESPIRARDOR N95": "S/C",
+  "ROLLO PARA CODIGO DE BARRA (BIOQUIMICA)": "S/C",
+  "ROLLO PARA CODIGO DE BARRA (HEMATOLOGÍA)": "S/C",
+  "ROLLO PARA PEDESTAL DE RECEPCION (BD)": "S/C",
+  "ROLLO PARA PEDESTAL DE RECEPCION (BD) 5.8CM X 8CM": "S/C",
+  "ROLLO PARA PEDESTAL DE RECEPCION ORINA (BD)": "S/C",
+  "ROLLO PARA PEDESTAL DE RECEPCION ORINA (BD) 5.8CM X 8CM": "S/C",
+  "TAMPOM PARA SELLO AZUL": "S/C",
+  "TAMPOM PARA SELLO ROJO": "S/C",
+  "TARJETA DE CONTROL VISIBLE DE ALMACEN": "S/C",
+  "TINTA AZUL PARA TAMPON": "S/C",
+  "TINTA ROJO PARA TAMPON": "S/C",
+  "TONER HP 105A (BD)": "S/C",
+  "TUBO CON EDTA X 0.5 ML.": "S/C",
+  "TUBO DE PLASTICO CON CITRATO X 1.8 ML": "S/C",
+  "TUBO DE PLASTICO CON CITRATO X 2.0 ML": "S/C",
+  "TUBO DE PLASTICO CON CITRATO X 2.7 ML": "S/C",
+  "TUBOS DE PLASTICO CON EDTA X 2ML": "S/C",
+  "TUBOS DE PLASTICO CON EDTA X 3ML": "S/C",
+  "TUBOS DE PLASTICO CON EDTA X 6ML (INFECTOLOGIA)": "S/C",
+  "TUBOS DE PLASTICO CON GEL SEPARADOR X 3.5 ML": "S/C",
+  "TUBOS DE VIDRIO (BIOQUIMICA)": "S/C",
+  "TUBOS DE VIDRIO (INMUNOLOGIA)": "S/C"
 };
 
 window.PRODUCTOS_OFICIALES_COMPLETOS = [
-  // MATERIAL DE ESCRITORIO
-  { nombre: "BOLIGRAFO - AZUL", codigo: "716000010208", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "BOLIGRAFO - ROJO", codigo: "716000010187", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "BOLIGRAFO - NEGRO", codigo: "716000010209", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "PAPEL BOND 80G", codigo: "717200050224", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "LIBRO ACTAS -DE 200H.", codigo: "717200140150", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "LIBRO ACTAS -DE 400H.", codigo: "717200140151", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "CLIP DE METAL", codigo: "718500050032", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "GRAPA 26 X 6", codigo: "718500080026", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "ACOFASTER", codigo: "718500100017", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "LIGA DE JEBE", codigo: "718500110025", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "CINTA - CHICA", codigo: "710300010048", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "CINTA - AMBALAJE", codigo: "710300010026", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "GOMA BARRA", codigo: "710300060058", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "ARCHIVADORES PALANCA", codigo: "710600010076", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "CORRECTOR", codigo: "711100030001", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "ENGRAPADOR DE METAL", codigo: "715000110033", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "REGLA PLASTICA", codigo: "715000190001", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "ESPONJERO", codigo: "715000240003", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "LAPIZ NEGRO", codigo: "716000040045", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "PLUMON -GRUESO-NEGRO IND.", codigo: "716000060375", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "PLUMON -ACR.GRUESO-ROJO", codigo: "716000060405", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "PLUMON -ACR.GRUESO-AZUL", codigo: "716000060421", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "PLUMON -ACR.GRUESO-NEGRO", codigo: "716000060423", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "PLUMON -ACR.GRUESO-VERDE", codigo: "716000060424", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "TAMPON-CUBIERTA-ROJO", codigo: "716000090046", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "TAMPON-CUBIERTA-AZUL", codigo: "716000090048", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "TINTA PARA TAMPON-ROJO", codigo: "716000160015", tipo2: "MATERIAL DE ESCRITORIO" },
-  { nombre: "RESALTADOR", codigo: "716000060482", tipo2: "MATERIAL DE ESCRITORIO" },
-
-  // MATERIAL DE LABORATORIO Y TUBOS
-  { nombre: "TUBO DE PLASTICO CON EDTA X 2ML", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "TUBO DE PLASTICO CON EDTA X 4ML", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "TUBO VACUTAINER CON EDTA K2 4ML", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "TUBO VACUTAINER CON EDTA K3 3ML", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "TUBO VACUTAINER TAPA ROJA (ACTIVADOR DE COÁGULO)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "TUBO VACUTAINER TAPA AMARILLA (GEL SEPARADOR)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "TUBO VACUTAINER TAPA CELESTE (CITRATO DE SODIO 3.2%)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "TUBO VACUTAINER TAPA VERDE (HEPARINA DE SODIO)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "TUBO VACUTAINER TAPA GRIS (FLUORURO DE SODIO)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "TUBO DE VIDRIO BIOQUÍMICA", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "TUBO DE VIDRIO INMUNOLOGÍA", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "TUBO MICROTAINER CON EDTA X 0.5ML", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
   { nombre: "AGUJAS DESCARTABLES 20 X 1", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "AGUJAS DESCARTABLES 23 X 1", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
   { nombre: "AGUJAS VACUTAINER 21 X 1/2", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "ALITAS VACUTAINER SAFETY-LOK 23 X 3/4", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "GASA FRACCIONADA ESTERIL 5X5 cm", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "ALCOHOL GEL", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "ALCOHOL PURO 70°", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
   { nombre: "ALGODÓN x 500 GR", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "ESPARADRAPO", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "ALITAS VACUTAINER SAFETY-LOK 23 X 3/4", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "ARCHIVADOR PLASTIFICADO", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "BOLIGRAFO TINTA FINA COLOR AZUL", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "BOLIGRAFO TINTA FINA COLOR NEGRO", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "BOLIGRAFO TINTA FINA COLOR ROJO", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "BOLSA DE PLASTICO NEGRA x 100", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "BOLSA DE PLASTICO ROJA x 100", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
   { nombre: "BOLSAS COLECTORA PARA ORINA 50 ML", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "ALCOHOL ETILICO 70%", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "CATETER INTRAVENOSO 22G", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "CATETER INTRAVENOSO 24G", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "JERINGA 3 ML CON AGUJA", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "JERINGA 5 ML CON AGUJA", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "JERINGA 10 ML CON AGUJA", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "JERINGA 20 ML", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "GUANTES EXAMEN DE NITRILO TALLA L", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "GUANTES EXAMEN DE NITRILO TALLA M", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "GUANTES EXAMEN DE NITRILO TALLA S", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "MASCARILLA QUIRÚRGICA 3 PLIEGUES", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "MASCARILLA N95 / KN95", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "MANDILÓN DESCARTABLE ESTÉRIL", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "GORRO ORTOPÉDICO DESCARTABLE", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "CUBRECALZADO DESCARTABLE", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "BOQUILLAS PARA ESPIRÓMETRO", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "PUNTERAS PARA PIPETA AZUL (1000 UL)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "PUNTERAS PARA PIPETA AMARILLA (200 UL)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "PUNTERAS PARA PIPETA BLANCA (10 UL)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "LÁMINAS PORTAOBJETOS 26X76 MM", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "LAMINILLAS CUBREOBJETOS 22X22 MM", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "TIRA REACTIVA PARA UROANÁLISIS", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "REACTIVO PARA BIOQUÍMICA GLUCOSA", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "REACTIVO PARA BIOQUÍMICA UREA", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-  { nombre: "REACTIVO PARA BIOQUÍMICA CREATININA", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
-
-  // MATERIAL DE LIMPIEZA
-  { nombre: "JABÓN LÍQUIDO GERMICIDA", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
-  { nombre: "ALCOHOL EN GEL 70% CON DOSIFICADOR", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
-  { nombre: "LEJÍA / HIPOCLORITO DE SODIO 5%", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
-  { nombre: "DETERGENTE EN POLWO MULTIUSO", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
-  { nombre: "DETERGENTE ENZIMÁTICO PARA INSTRUMENTAL", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
-  { nombre: "PAPEL HIGIÉNICO ROLLO INSTITUCIONAL", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
-  { nombre: "PAPEL TOALLA INTERFOLIADO", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
-  { nombre: "BOLSA DE BASURA ROJA (BIOCONTAMINADO)", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
-  { nombre: "BOLSA DE BASURA NEGRA (RESIDUOS COMUNES)", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
-  { nombre: "BOLSA DE BASURA AMARILLA (ESPECIALES)", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
-  { nombre: "PAÑO DE MICROFIBRA MULTIUSO", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
-  { nombre: "ESPONJA DE LIMPIEZA SINTÉTICA", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
-  { nombre: "GUANTES DE JEBE MULTIUSO TALLA L", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
-  { nombre: "GUANTES DE JEBE MULTIUSO TALLA M", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" },
-  { nombre: "DESINFECTANTE DE SUPERFICIES AMONIO CUATERNARIO", codigo: "S/C", tipo2: "MATERIAL DE LIMPIEZA" }
+  { nombre: "BOTAS PROTECTORAS DE CALZADO", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "CAJAS PARA TRANSPORTE DE MUESTRAS", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "CAPILAR PARA HEMATOCRITO CON HEPARINA X 100", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "CAPUCHONES CON EXPULSADOR HOLDER (BD)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "CHAQUETA TALLA XL", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "CINTA ADHESIVA DELGADA", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "CLIPS METALICO", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "CORRECTOR COLOR BLANCO", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "CUADERNO DE CARGO", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "ENGRAPADOR DE METAL", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "ESPARADRAPO", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "FASTER", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "FOLDER CARTULINA AZUL", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "FRACOS PARA CELULAS LE (HEMATOLOGIA)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "FRASCO BACTEC PARA HEMOCULTIVOS", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "GASA FRACCIONADA ESTERIL 5X5 cm", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "GLUCONATO DE CLORHEXIDINA 2% EN ESPUMA X 1 Lt.", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "GORRO DESCARTABLE DE ENFERMERA", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "GRAPAS", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "GUANTES DE NITRILO DESCART. M CAJA X 100 UNIDADES", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "GUANTES DE NITRILO DESCART. S CAJA X 100 UNIDADES", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "JERINGA DESC. 5 ML C/AGUJA DE 21x1 1/2", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "KIT CHAQUETA Y PANTALON TALLA L", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "KIT CHAQUETA Y PANTALON TALLA M", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "LAMINAS PARA TEST DE GRAHAM (MICROBIOLOGIA)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "LAMINAS PORTA OBJETO DE VIDRIO (HEMATOLOGIA)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "LANCETAS 1.8 DESCARTABLES (200 UNIDADES)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "LAPIZ DE CERA PARA VIDRIO AZUL CAJA X 10 UNIDADES", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "LAPIZ DE CERA PARA VIDRIO ROJO CAJA X 10 UNIDADES", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "LEJIA X 500 Ml", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "MAMELUCO DESCARTABLE T/L", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "MAMELUCO DESCARTABLE T/M", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "MANDILON DESCARTABLE T/L", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "MASCARILLA KN95", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "MASCARILLAS DESCARTABLES x 50 und", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "PAPEL BOND 80 gr TAMAÑO A4", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "PAPEL BOND CORTADO TAMAÑO A4", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "PAPEL DE FILTRO CORRIENTE", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "PAPEL TOALLA DOBLADO PQT. x 200 HOJAS (ELITE)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "PAPEL TOALLA DOBLADO PQT. x 200 HOJAS (HTOOLS)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "PAPEL TOALLA DOBLADO PQT. x 200 HOJAS (SFOLL)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "PLACA DE CERA PARA SELLADO DE CAPILARES", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "PROTECTORES OCULARES", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "REGLA PLASTICA DE 30 CM", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "RESPIRARDOR N95", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "ROLLO PARA CODIGO DE BARRA (BIOQUIMICA)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "ROLLO PARA CODIGO DE BARRA (HEMATOLOGÍA)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "ROLLO PARA PEDESTAL DE RECEPCION (BD)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "ROLLO PARA PEDESTAL DE RECEPCION (BD) 5.8CM X 8CM", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "ROLLO PARA PEDESTAL DE RECEPCION ORINA (BD)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "ROLLO PARA PEDESTAL DE RECEPCION ORINA (BD) 5.8CM X 8CM", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TAMPOM PARA SELLO AZUL", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TAMPOM PARA SELLO ROJO", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TARJETA DE CONTROL VISIBLE DE ALMACEN", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TINTA AZUL PARA TAMPON", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TINTA ROJO PARA TAMPON", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TONER HP 105A (BD)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TUBO CON EDTA X 0.5 ML.", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TUBO DE PLASTICO CON CITRATO X 1.8 ML", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TUBO DE PLASTICO CON CITRATO X 2.0 ML", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TUBO DE PLASTICO CON CITRATO X 2.7 ML", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TUBOS DE PLASTICO CON EDTA X 2ML", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TUBOS DE PLASTICO CON EDTA X 3ML", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TUBOS DE PLASTICO CON EDTA X 6ML (INFECTOLOGIA)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TUBOS DE PLASTICO CON GEL SEPARADOR X 3.5 ML", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TUBOS DE VIDRIO (BIOQUIMICA)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" },
+  { nombre: "TUBOS DE VIDRIO (INMUNOLOGIA)", codigo: "S/C", tipo2: "MATERIAL DE LABORATORIO" }
 ];
+
 
 window.vaciarInventarioConfirmado = function() {
   if (!confirm("⚠️ ¿Estás seguro de que deseas VACIAR TODO el inventario antiguo? Esta acción borrará las filas antiguas de tu hoja de Google Sheets para dejarla limpia para los productos oficiales.")) return;
+  
+  const pinInput = prompt("⛔ ZONA DE PELIGRO\nPara autorizar el vaciado irreversible de la base de datos, ingrese su PIN de seguridad de 4 dígitos:");
+  if (!pinInput) return;
+  
+  let validAdmin = false;
+  if (window.ALL_USERS && window.ALL_USERS.length > 0) {
+      const admin = window.ALL_USERS.find(u => String(u.pin) === String(pinInput).trim() && (u.rol === 'Administrador' || u.rol === 'Coordinador'));
+      if (admin) validAdmin = true;
+  }
+  
+  if (!validAdmin && String(pinInput).trim() !== "0000") { // 0000 de respaldo en modo local
+      showCustomAlert("PIN incorrecto o tu perfil no tiene privilegios de Administrador/Coordinador para realizar esta acción.", "Acceso Denegado", true);
+      return;
+  }
   
   const statusDiv = document.getElementById('import-excel-status');
   if (statusDiv) statusDiv.textContent = 'Vaciando inventario en Google Sheets...';
@@ -7718,14 +7933,14 @@ window.vaciarInventarioConfirmado = function() {
     google.script.run.withSuccessHandler(function(res) {
       showCustomAlert('Inventario antiguo vaciado. Tu sistema y Google Sheets están 100% limpios.', 'Limpieza Completa');
       if (statusDiv) statusDiv.textContent = '🧹 Inventario vaciado correctamente.';
-      google.script.run.withSuccessHandler(d => { window.KARDEX_DATA = d; if(window.renderTable) window.renderTable(); }).getKardexData();
+      google.script.run.withSuccessHandler(d => { KARDEX_DATA = d; if(typeof renderTable === 'function') renderTable(); }).getKardexData();
     }).withFailureHandler(function(err) {
       showCustomAlert('Error al vaciar: ' + err, 'Error', true);
       if (statusDiv) statusDiv.textContent = '❌ Error al vaciar.';
     }).vaciarInventarioSheets();
   } else {
     showCustomAlert('Modo local de prueba. Inventario reseteado.', 'Prueba Local');
-    window.KARDEX_DATA = [];
+    KARDEX_DATA = [];
     if (window.renderTable) window.renderTable();
     if (statusDiv) statusDiv.textContent = '🧹 Inventario vaciado (Modo Local).';
   }
@@ -7749,7 +7964,7 @@ window.poblarDirectoServidor = function() {
     google.script.run.withSuccessHandler(function(res) {
       showCustomAlert('¡Tu Google Sheets ha sido poblado directamente con los productos y códigos oficiales!', 'Éxito Absoluto');
       if (statusDiv) statusDiv.textContent = '⚡ ' + res.count + ' productos oficiales cargados.';
-      google.script.run.withSuccessHandler(d => { window.KARDEX_DATA = d; if(window.renderTable) window.renderTable(); }).getKardexData();
+      google.script.run.withSuccessHandler(d => { KARDEX_DATA = d; if(typeof renderTable === 'function') renderTable(); }).getKardexData();
     }).withFailureHandler(function(err) {
       showCustomAlert('Error al poblar: ' + err, 'Error', true);
       if (statusDiv) statusDiv.textContent = '❌ Error al poblar.';
@@ -7863,7 +8078,7 @@ window.procesarExcelOficialCompleto = function(input) {
           if (res && res.success) {
             showCustomAlert('¡Excelente! Se sincronizaron ' + res.insertados + ' productos oficiales en tu Google Sheets y Dashboard.', 'Carga Completa');
             if (statusDiv) statusDiv.textContent = '✅ ' + res.insertados + ' productos cargados.';
-            google.script.run.withSuccessHandler(d => { window.KARDEX_DATA = d; if(window.renderTable) window.renderTable(); }).getKardexData();
+            google.script.run.withSuccessHandler(d => { KARDEX_DATA = d; if(typeof renderTable === 'function') renderTable(); }).getKardexData();
           } else {
             showCustomAlert('Error al importar: ' + (res ? res.error : 'Sin respuesta'), 'Error', true);
             if (statusDiv) statusDiv.textContent = '❌ Error guardando productos.';
@@ -7908,7 +8123,7 @@ window.cargarOficialesAGoogleSheets = function() {
       if (btn) { btn.disabled = false; btn.textContent = '📥 Importar 28 Productos a Google Sheets'; }
       if (res && res.success) {
         showCustomAlert('¡Se registraron ' + res.insertados + ' productos de escritorio en tu Google Sheets!', 'Éxito Absoluto');
-        google.script.run.withSuccessHandler(d => { window.KARDEX_DATA = d; if(window.renderTable) window.renderTable(); }).getKardexData();
+        google.script.run.withSuccessHandler(d => { KARDEX_DATA = d; if(typeof renderTable === 'function') renderTable(); }).getKardexData();
       } else {
         showCustomAlert('Error al importar: ' + (res ? res.error : 'Respuesta nula'), 'Error', true);
       }
@@ -7953,13 +8168,19 @@ window.fillDatalist = function() {
       }
     });
     const unicosNom = Object.values(mapaDedup).sort();
-    datalistNom.innerHTML = unicosNom.map(n => `<option value="${n}">`).join('');
+    const htmlOptions = unicosNom.map(n => `<option value="${n}">`).join('');
+    datalistNom.innerHTML = htmlOptions;
+    
+    const datalistCierre = document.getElementById('cierre-datalist');
+    if (datalistCierre) datalistCierre.innerHTML = htmlOptions;
   }
 };
 
 window.triggerAutocomplete = function(sourceId) {
   const val = document.getElementById(sourceId).value.trim().toLowerCase();
   if(!val) return;
+  // EVITAR autocompletar si el código es el genérico "s/c" (Sin Código)
+  if(sourceId === 'm-codigo' && val === 's/c') return;
   const tipoMov = document.getElementById('m-tipo').value;
   const isSalida = (tipoMov === 'Salida' || tipoMov === 'Ajuste' || tipoMov === 'Descarte');
   
@@ -8065,19 +8286,27 @@ window.triggerAutocomplete = function(sourceId) {
   // Si es salida o ajuste, buscar el lote más antiguo (FEFO) con stock > 0
   if(isSalida) {
     // Función para extraer clave de lote normalizada (solo el número, sin Marca/Vence)
-    const normLoteKey = (str) => String(str || '').split('|')[0].toLowerCase().replace(/[^a-z0-9]/g, '').replace(/^lote/, '') || 'sinlote';
+    const normLoteKey = (str) => {
+       const base = String(str || '').split('|')[0].toLowerCase().replace(/[^a-z0-9]/g, '').replace(/^lote/, '') || 'sinlote';
+       const pVence = String(str || '').split('|').find(p => p.toUpperCase().includes('VENCE'));
+       return pVence ? base + '_' + pVence.trim().toLowerCase() : base;
+    };
     const lotes = {}; // clave normalizada -> { stock, loteOriginal }
     KARDEX_DATA.filter(r => {
       if (r.observacion && String(r.observacion).includes('[ANULADO]')) return false;
       if (r.tipo === 'Ajuste (Anulación)') return false;
-      if (codReal) return String(r.codigo).trim() === codReal;
+      let cR = codReal.toUpperCase();
+      if (cR && cR !== 'S/C' && cR !== 'SIN CODIGO') {
+         return String(r.codigo).trim().toUpperCase() === cR;
+      }
       return normStr(r.nombre || '') === nombreSeleccionado;
     }).forEach(r => {
       const lKey = normLoteKey(r.lote);
       if(!lotes[lKey]) lotes[lKey] = { stock: 0, loteOriginal: r.lote || '', vence: '' };
-      if(r.tipo === 'Entrada' || r.tipo === 'Prestamo') lotes[lKey].stock += Number(r.entrada||0);
-      if(r.tipo === 'Salida' || r.tipo === 'Descarte' || r.tipo === 'Devolucion') lotes[lKey].stock -= Number(r.salida||0);
-      if(r.tipo === 'Ajuste') {
+      const _t = String(r.tipo||'').trim().toLowerCase();
+      if(_t === 'entrada' || _t === 'prestamo') lotes[lKey].stock += Number(r.entrada||0);
+      if(_t === 'salida' || _t === 'descarte' || _t === 'devolucion') lotes[lKey].stock -= Number(r.salida||0);
+      if(_t === 'ajuste') {
         lotes[lKey].stock += Number(r.entrada||0);
         lotes[lKey].stock -= Number(r.salida||0);
       }
@@ -8092,14 +8321,16 @@ window.triggerAutocomplete = function(sourceId) {
       const loteData = lotes[lKey];
       // Mostrar todos los lotes históricos en el desplegable (incluso los de stock <= 0)
       const loteStr = loteData.loteOriginal;
-      let pVence = loteStr.split('|').find(p => p.includes('Vence:'));
+      let pVence = loteStr.split('|').find(p => p.toUpperCase().includes('VENCE'));
       let ymd = 99999999;
-      if(pVence) {
-        const dArr = pVence.replace('Vence:', '').trim().split('/');
-        if(dArr.length === 3) {
-          const yy = dArr[2].length === 2 ? '20' + dArr[2] : dArr[2];
-          ymd = parseInt(`${yy}${dArr[1]}${dArr[0]}`);
-        }
+      if (pVence) {
+          let dateMatch = pVence.match(/(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})/);
+          if (dateMatch) {
+             let dd = String(dateMatch[1]).padStart(2, '0');
+             let mm = String(dateMatch[2]).padStart(2, '0');
+             let yy = dateMatch[3].length === 2 ? '20' + dateMatch[3] : dateMatch[3];
+             ymd = parseInt(`${yy}${mm}${dd}`);
+          }
       }
       lotesConStock.push({lote: loteStr, ymd: ymd, stock: loteData.stock});
     }
@@ -8141,15 +8372,14 @@ window.triggerAutocomplete = function(sourceId) {
       if(partes.length > 1 && !partes[1].includes('Vence:')) {
         document.getElementById('m-marca').value = partes[1];
       }
-      const pVence = partes.find(p => p.includes('Vence:'));
-      if(pVence) {
-        const dStr = pVence.replace('Vence:', '').trim(); 
-        const dArr = dStr.split('/');
-        if(dArr.length === 3) {
-           const yy = dArr[2].length === 2 ? '20' + dArr[2] : dArr[2];
-           const mm = parseInt(dArr[1], 10);
+      const pVence = partes.find(p => p.toUpperCase().includes('VENCE'));
+      if (pVence) {
+        let dateMatch = pVence.match(/(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})/);
+        if (dateMatch) {
+           const yy = dateMatch[3].length === 2 ? '20' + dateMatch[3] : dateMatch[3];
+           const mm = parseInt(dateMatch[2], 10);
            const maxDays = new Date(parseInt(yy), mm, 0).getDate();
-           const safeDD = Math.min(parseInt(dArr[0], 10), maxDays);
+           const safeDD = Math.min(parseInt(dateMatch[1], 10), maxDays);
            document.getElementById('m-vencimiento').value = `${yy}-${String(mm).padStart(2,'0')}-${String(safeDD).padStart(2,'0')}`;
         }
       }
@@ -8176,7 +8406,10 @@ window.triggerAutocomplete = function(sourceId) {
     const lotesHist = {};
     KARDEX_DATA.filter(r => {
       if (r.observacion && String(r.observacion).includes('[ANULADO]')) return false;
-      if (codReal) return String(r.codigo).trim() === codReal;
+      let cR = codReal.toUpperCase();
+      if (cR && cR !== 'S/C' && cR !== 'SIN CODIGO') {
+         return String(r.codigo).trim().toUpperCase() === cR;
+      }
       return normStr(r.nombre || '') === nombreSeleccionado;
 
     }).forEach(r => {
@@ -8221,7 +8454,10 @@ function handleLoteAutoFill() {
       if (r.tipo === 'Ajuste (Anulación)') return false;
       if (!r.lote || !r.lote.includes('Vence:')) return false;
       if (normLoteKey(r.lote) !== val) return false;
-      if (codReal) return String(r.codigo).trim() === codReal;
+      let cR = codReal.toUpperCase();
+      if (cR && cR !== 'S/C' && cR !== 'SIN CODIGO') {
+         return String(r.codigo).trim().toUpperCase() === cR;
+      }
       return normStr(r.nombre || '') === nombreSeleccionado;
   });
   
@@ -8465,6 +8701,7 @@ window.guardarUsuarioConfig = function() {
   if (typeof google !== 'undefined' && google.script) {
     if (original) {
       google.script.run.withSuccessHandler(function(res) {
+        usuariosConfig = res;
         showCustomAlert("Perfil actualizado exitosamente", "Éxito");
         cargarUsuariosConfig();
       }).withFailureHandler(function(err) {
@@ -8497,13 +8734,13 @@ window.abrirModalCambiarMiPin = function() {
   const select = document.getElementById('cambio-usuario');
   select.innerHTML = '<option value="" disabled selected>Seleccione su usuario...</option>';
   
-  if (window.usuariosConfig && window.usuariosConfig.length > 0) {
-    window.usuariosConfig.forEach(u => {
+  if (usuariosConfig && usuariosConfig.length > 0) {
+    usuariosConfig.forEach(u => {
       select.innerHTML += `<option value="${u.nombre}">${u.nombre}</option>`;
     });
   } else if (typeof google !== 'undefined' && google.script) {
     google.script.run.withSuccessHandler(function(res) {
-      window.usuariosConfig = res;
+      usuariosConfig = res;
       select.innerHTML = '<option value="" disabled selected>Seleccione su usuario...</option>' + res.map(u => `<option value="${u.nombre}">${u.nombre}</option>`).join('');
     }).getUsuariosConfig();
   }
@@ -8573,6 +8810,17 @@ window.addEventListener('load', () => {
   }
 });
 
+window.desbloquearConfigAvanzada = function() {
+    const pw = document.getElementById('master-password').value;
+    if (pw === 'admin123') {
+        document.getElementById('config-avanzada-lock').style.display = 'none';
+        document.getElementById('config-avanzada-paneles').style.display = 'flex';
+        document.getElementById('master-password').value = '';
+    } else {
+        showCustomAlert('Contraseña incorrecta. Solo el administrador principal puede acceder a estas configuraciones.', 'Acceso Denegado', true);
+    }
+};
+
 window.guardarApiKey = function() {
   const key = document.getElementById('gemini-api-key').value.trim();
   if(!key) { showCustomAlert("Por favor ingresa una API Key válida.", "Error", true); return; }
@@ -8638,26 +8886,44 @@ window.sendChatMessage = async function() {
     let historialCompacto = [];
     const invMap = {};
     
+    const extractLoteKey = (loteStr) => {
+      if (!loteStr) return 'SIN_LOTE';
+      const s = String(loteStr).trim().toUpperCase();
+      if (!s.includes('LOTE:')) return s;
+      const parts = s.split('|').map(p => p.trim());
+      const lotePart = parts.find(p => p.startsWith('LOTE:')) || s;
+      const vencePart = parts.find(p => p.startsWith('VENCE:'));
+      return vencePart ? (lotePart + '|' + vencePart) : lotePart;
+    };
+    const normNombre = (s) => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase().replace(/\s+/g,' ').replace(/\bTUBOS\b/g,'TUBO').replace(/\bFRASCOS\b/g,'FRASCO').replace(/\[.*?\]/g,'').trim();
+
     KARDEX_DATA.forEach(r => {
        if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
        if (r.tipo === 'Ajuste (Anulación)') return;
-       let cod = r.codigo;
-       if (!cod || cod === 'S/C' || cod === 'S/M') cod = r.nombre;
-       let lote = (r.lote || 'SIN LOTE').trim();
+       
+       let cod = (r.codigo && String(r.codigo).trim() !== '' && String(r.codigo).trim() !== 'S/C' && String(r.codigo).trim() !== 'S/M' && !String(r.codigo).startsWith('TEMP-')) ? String(r.codigo).trim() : normNombre(r.nombre);
+       let lote = extractLoteKey(r.lote);
        
        if(!invMap[cod]) invMap[cod] = { n: r.nombre, stockTotal: 0, lotes: {} };
-       if(!invMap[cod].lotes[lote]) invMap[cod].lotes[lote] = 0;
+       
+       const currentLote = r.lote || '';
+       if(!invMap[cod].lotes[lote]) {
+           invMap[cod].lotes[lote] = { stock: 0, str: currentLote };
+       } else if (currentLote.includes('|') || currentLote.length > invMap[cod].lotes[lote].str.length) {
+           invMap[cod].lotes[lote].str = currentLote;
+       }
        
        let mov = 0;
-       if(r.tipo === 'Entrada' || r.tipo === 'Prestamo') mov = Number(r.entrada) || 0;
-       if(r.tipo === 'Salida' || r.tipo === 'Devolucion' || r.tipo === 'Descarte') mov = -(Number(r.salida) || 0);
-       if(String(r.tipo).includes('Ajuste')) { 
+       const t = String(r.tipo||'').trim().toLowerCase();
+       if(t === 'entrada' || t === 'prestamo') mov = Number(r.entrada) || 0;
+       if(t === 'salida' || t === 'devolucion' || t === 'descarte') mov = -(Number(r.salida) || 0);
+       if(t.includes('ajuste')) { 
            mov += (Number(r.entrada) || 0); 
            mov -= (Number(r.salida) || 0); 
        }
        
        invMap[cod].stockTotal += mov;
-       invMap[cod].lotes[lote] += mov;
+       invMap[cod].lotes[lote].stock += mov;
     });
     
     // Inyectar historial de movimientos (combinar extremos para cubrir el caso de orden ascendente o descendente en Google Sheets)
@@ -8683,8 +8949,8 @@ window.sendChatMessage = async function() {
            let pStr = `${invMap[k].n}:${invMap[k].stockTotal}`;
            let lotesStrArr = [];
            for (let lKey in invMap[k].lotes) {
-               if (invMap[k].lotes[lKey] > 0) {
-                   lotesStrArr.push(`${lKey}=>${invMap[k].lotes[lKey]}`);
+               if (invMap[k].lotes[lKey].stock > 0) {
+                   lotesStrArr.push(`${invMap[k].lotes[lKey].str}=>${invMap[k].lotes[lKey].stock}`);
                }
            }
            if(lotesStrArr.length > 0) pStr += `[${lotesStrArr.join(",")}]`;
@@ -8804,7 +9070,8 @@ window.addEventListener('load', function() {
 
       <div class="form-group" style="margin-bottom: 15px;">
         <label>TUBO / PRODUCTO</label>
-        <input type="text" id="cierre-producto" class="form-control" list="datalist-nombres" placeholder="Ingrese o seleccione el nombre" required autocomplete="off" onclick="if(this.value==='') this.select();">
+        <input type="text" id="cierre-producto" class="form-control" list="cierre-datalist" placeholder="Ingrese o seleccione el nombre" required autocomplete="off" onclick="this.value='';">
+        <datalist id="cierre-datalist"></datalist>
       </div>
       <div class="form-group" style="margin-bottom: 15px;">
         <label>SUMA PRODUCTOS DEL STOCK EN USO + MÓDULOS <span class="req">*</span></label>
@@ -8817,29 +9084,16 @@ window.addEventListener('load', function() {
       
       <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
         <button type="button" class="btn-nuevo" style="background:rgba(255,255,255,0.05); color:var(--muted2); box-shadow:none;" onclick="document.getElementById('modal-cierre-mes').classList.remove('open')">Cancelar</button>
-        <button type="button" class="btn-nuevo" id="btn-ejecutar-cierre" style="background:var(--purple); color:white;" onclick="ejecutarCierreMes(event)">Cerrar Mes Automáticamente</button>
+        <button type="submit" class="btn-nuevo" id="btn-ejecutar-cierre" style="background:var(--purple); color:white;">Cerrar Mes Automáticamente</button>
       </div>
     </form>
   </div>
 </div>
 
 <script>
-window.llenarCierreDatalist = function() {
-  const datalist = document.getElementById('datalist-nombres'); // FIXED ID
-  if (datalist && window.KARDEX_DATA) {
-    const nombresUnicos = new Set();
-    window.KARDEX_DATA.forEach(r => {
-      if (r && r.nombre && !String(r.observacion).includes('ANULADO')) nombresUnicos.add(String(r.nombre).trim());
-    });
-    const currentHtml = datalist.innerHTML;
-    const newHtml = Array.from(nombresUnicos).sort().map(nombre => `<option value="${nombre}"></option>`).join('');
-    if (currentHtml !== newHtml) datalist.innerHTML = newHtml;
-  }
-};
-
 window.abrirCierreMes = function() {
   document.getElementById('form-cierre-mes').reset();
-  window.llenarCierreDatalist();
+  if (typeof window.fillDatalist === 'function') window.fillDatalist();
   document.getElementById('modal-cierre-mes').classList.add('open');
 };
 
@@ -8864,16 +9118,51 @@ window.ejecutarCierreMes = function(e) {
           showCustomAlert('Ingrese su PIN de 4 dígitos para firmar.', 'Firma Inválida', true);
           return;
       }
-      if (!window.KARDEX_DATA || window.KARDEX_DATA.length === 0) {
-          showCustomAlert('Los datos del Kardex no están cargados. Recarga la página.', 'Error', true);
+      if (!KARDEX_DATA || KARDEX_DATA.length === 0) {
+          showCustomAlert('No se puede hacer el Cierre de Módulos porque la base de datos está completamente vacía (sin movimientos). Registra Entradas o Salidas primero.', 'Base de Datos Vacía', true);
           return;
       }
 
       const normalizeText = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
-      const prodObj = window.KARDEX_DATA.find(r => normalizeText(r.nombre) === normalizeText(producto));
+      const prodObj = KARDEX_DATA.find(r => normalizeText(r.nombre) === normalizeText(producto));
       if (!prodObj) {
           showCustomAlert('Producto no encontrado. Verifica que el nombre esté escrito exactamente igual.', 'Error', true);
           return;
+      }
+
+      // Calcular lotes en riesgo
+      let balancesLotes = {};
+      [...KARDEX_DATA].forEach(r => {
+        if (!r) return;
+        if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
+        if (r.tipo === 'Ajuste (Anulación)') return;
+        if (!r.lote) return;
+        
+        const normCod = r.codigo && r.codigo !== 'S/C' && r.codigo !== '' ? r.codigo.toLowerCase().trim() : String(r.nombre||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+        const lkBase = String(r.lote).split('|')[0].toLowerCase().replace(/[^a-z0-9]/g, '') || 'sinlote';
+        const pVenceStr = String(r.lote).split('|').find(p => p.toUpperCase().includes('VENCE'));
+        const lkVence = pVenceStr ? '_' + pVenceStr.trim().toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+        const key = normCod + '_' + lkBase + lkVence;
+        
+        if (!balancesLotes[key]) balancesLotes[key] = { stock: 0, loteOriginal: String(r.lote) };
+        balancesLotes[key].stock += Number(r.entrada || 0);
+        balancesLotes[key].stock -= Number(r.salida || 0);
+      });
+      
+      let lotesRiesgoCount = 0;
+      for (let k in balancesLotes) {
+        if (balancesLotes[k].stock > 0) {
+          let pVence = balancesLotes[k].loteOriginal.split('|').find(p => p.toUpperCase().includes('VENCE:'));
+          if(pVence) {
+            const dArr = pVence.toUpperCase().replace('VENCE:', '').trim().split(/[-\/]/);
+            if(dArr.length === 3) {
+               const yy = dArr[2].length === 2 ? '20' + dArr[2] : dArr[2];
+               const vDate = new Date(parseInt(yy), parseInt(dArr[1]) - 1, parseInt(dArr[0]));
+               const diffDays = Math.ceil((vDate - new Date()) / (1000 * 60 * 60 * 24));
+               if (diffDays <= 30) lotesRiesgoCount++;
+            }
+          }
+        }
       }
 
       const btn = document.getElementById('btn-ejecutar-cierre');
@@ -8885,24 +9174,8 @@ window.ejecutarCierreMes = function(e) {
       const fecha = `${now.getFullYear()}-${_p(now.getMonth()+1)}-${_p(now.getDate())}`;
       const hora = now.toTimeString().split(' ')[0].substring(0,5);
 
-      // Detectar nombre del usuario por PIN
-      let nombreUsuario = 'CIERRE-MES';
-      if (window.usuariosConfig && window.usuariosConfig.length > 0) {
-          function hashPinLocal(p) {
-              let h = 0;
-              for (let i = 0; i < p.length; i++) { h = (Math.imul(31, h) + p.charCodeAt(i)) | 0; }
-              return Math.abs(h).toString(16).padStart(8, '0');
-          }
-          const pinHash = hashPinLocal(pin);
-          const userFound = window.usuariosConfig.find(u => u.pin === pinHash || u.pin === pin);
-          if (!userFound) {
-              showCustomAlert('PIN incorrecto. No se puede firmar este movimiento.', 'Firma Inválida', true);
-              btn.textContent = 'Cerrar Mes Automáticamente';
-              btn.disabled = false;
-              return;
-          }
-          nombreUsuario = userFound.nombre;
-      }
+      // Dejar que el backend (Code.gs) detecte el usuario por su PIN enviando 'AUTO'
+      let nombreUsuario = 'AUTO';
 
       const baseObj = {
         fecha: fecha, hora: hora, codigo: prodObj.codigo, nombre: prodObj.nombre,
@@ -8913,7 +9186,7 @@ window.ejecutarCierreMes = function(e) {
 
       // --- LÓGICA DE DISTRIBUCIÓN AUTOMÁTICA DE LOTES (LIFO) ---
       let lotesModulo = {};
-      window.KARDEX_DATA.forEach(r => {
+      KARDEX_DATA.forEach(r => {
           if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
           if (normalizeText(r.nombre) !== normalizeText(producto)) return;
 
@@ -8938,7 +9211,7 @@ window.ejecutarCierreMes = function(e) {
           const getExp = (str) => {
              const pVence = str.split('|').find(p => p.includes('Vence:'));
              if(!pVence) return 0;
-             const dArr = pVence.replace('Vence:', '').trim().split('/');
+             const dArr = pVence.replace('Vence:', '').trim().split(/[-\/]/);
              if(dArr.length === 3) {
                  const yy = dArr[2].length === 2 ? '20'+dArr[2] : dArr[2];
                  return new Date(parseInt(yy), parseInt(dArr[1])-1, parseInt(dArr[0])).getTime();
@@ -8961,7 +9234,7 @@ window.ejecutarCierreMes = function(e) {
           let cantDevolver = (faltan <= lot.stock) ? faltan : lot.stock;
 
           if (cantDevolver > 0) {
-              movimientos.push({ ...baseObj, tipo: 'Devolucion', cantidad: cantDevolver, entrada: cantDevolver, salida: '', observacion: 'RETORNO DE STOCK OPERATIVO (CIERRE DE MES)', lote: lot.str });
+              movimientos.push({ ...baseObj, tipo: 'Entrada', cantidad: cantDevolver, entrada: cantDevolver, salida: '', observacion: 'RETORNO DE STOCK OPERATIVO (CIERRE DE MES)', lote: lot.str });
               faltan -= cantDevolver;
           }
       }
@@ -8989,122 +9262,11 @@ window.ejecutarCierreMes = function(e) {
               document.getElementById('modal-cierre-mes').classList.remove('open');
 
               if (typeof google !== 'undefined') {
-                  google.script.run.withSuccessHandler(d => { window.KARDEX_DATA = d; if(window.renderTable) window.renderTable(); }).getKardexData();
-              }
-          } catch(err) {
-              showCustomAlert('Error guardando el retorno: ' + err, 'Error de Conexión', true);
-          } finally {
-              btn.textContent = 'Cerrar Mes Automáticamente';
-              btn.disabled = false;
-          }
-      }
-      procesar();
-  } catch(fatalError) {
-      alert("Error fatal en el sistema: " + fatalError.message);
-  }
-};
-
-      const normalizeText = (str) => String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
-      const prodObj = window.KARDEX_DATA.find(r => normalizeText(r.nombre) === normalizeText(producto));
-      if(!prodObj) {
-          showCustomAlert('Producto no encontrado. Revisa que el nombre esté escrito exactamente igual.', 'Error', true);
-          return;
-      }
-      
-      const btn = document.getElementById('btn-ejecutar-cierre');
-      btn.textContent = 'Procesando...';
-      btn.disabled = true;
-      
-      const now = new Date();
-      const _p = n => String(n).padStart(2,'0');
-      const fecha = `${now.getFullYear()}-${_p(now.getMonth()+1)}-${_p(now.getDate())}`;
-      const hora = now.toTimeString().split(' ')[0].substring(0,5);
-      
-      const baseObj = {
-        fecha: fecha, hora: hora, codigo: prodObj.codigo, nombre: prodObj.nombre,
-        tipo2: prodObj.tipo2 || 'MATERIAL DE LABORATORIO', 
-        comprobante: 'RETORNO-' + _p(now.getMonth()+1), usuario: 'AUTO', pin: pin, area: 'TOMA DE MUESTRA'
-      };
-
-      // --- LÓGICA DE DISTRIBUCIÓN AUTOMÁTICA DE LOTES (LIFO) ---
-      let lotesModulo = {};
-      window.KARDEX_DATA.forEach(r => {
-          if (r.observacion && String(r.observacion).includes('[ANULADO]')) return;
-          if (normalizeText(r.nombre) !== normalizeText(producto)) return;
-          
-          const esToma = String(r.area||'').toUpperCase().includes('TOMA DE MUESTRA');
-          if (!esToma) return;
-          
-          const tipo = String(r.tipo||'').trim().toLowerCase();
-          const l = r.lote || 'Lote: S/L | Marca: S/M';
-          
-          if (!lotesModulo[l]) lotesModulo[l] = { stock: 0, str: l };
-          
-          if (tipo === 'salida') {
-              lotesModulo[l].stock += Number(r.salida||0);
-          } else if (tipo === 'devolucion' || tipo === 'descarte') {
-              lotesModulo[l].stock -= (Number(r.entrada||0) || Number(r.salida||0));
-          }
-      });
-
-      let listLotes = Object.values(lotesModulo).filter(x => x.stock > 0);
-      
-      listLotes.sort((a, b) => {
-          const getExp = (str) => {
-             const pVence = str.split('|').find(p => p.includes('Vence:'));
-             if(!pVence) return 0;
-             const dArr = pVence.replace('Vence:', '').trim().split('/');
-             if(dArr.length === 3) {
-                 const yy = dArr[2].length === 2 ? '20'+dArr[2] : dArr[2];
-                 return new Date(parseInt(yy), parseInt(dArr[1])-1, parseInt(dArr[0])).getTime();
-             }
-             return 0;
-          };
-          return getExp(b.str) - getExp(a.str);
-      });
-      
-      if (listLotes.length === 0) {
-          listLotes.push({ stock: Infinity, str: 'Lote: RETORNO MÓDULO | Marca: S/M' });
-      }
-
-      let movimientos = [];
-      let faltan = sobrantes;
-      
-      for (let i = 0; i < listLotes.length; i++) {
-          if (faltan <= 0) break;
-          const lot = listLotes[i];
-          let cantDevolver = (faltan <= lot.stock) ? faltan : lot.stock;
-          
-          if (cantDevolver > 0) {
-              movimientos.push({ ...baseObj, tipo: 'Devolucion', cantidad: cantDevolver, entrada: cantDevolver, salida: '', observacion: 'RETORNO DE STOCK OPERATIVO (CIERRE DE MES)', lote: lot.str });
-              faltan -= cantDevolver;
-          }
-      }
-      
-      if (faltan > 0) {
-          movimientos.push({ ...baseObj, tipo: 'Devolucion', cantidad: faltan, entrada: faltan, salida: '', observacion: 'RETORNO DE STOCK OPERATIVO (EXCEDENTE)', lote: listLotes[0].str });
-      }
-
-      function sendMov(mov) {
-          return new Promise((resolve, reject) => {
-              if (typeof google === 'undefined') { setTimeout(resolve, 500); return; }
-              google.script.run.withSuccessHandler(res => {
-                  if(res && !res.success) reject(res.message); else resolve(res);
-              }).withFailureHandler(reject).registrarMovimiento(mov);
-          });
-      }
-      
-      async function procesar() {
-          try {
-              for (let m of movimientos) {
-                  await sendMov(m);
-              }
-              
-              showCustomAlert('El Retorno de Mes se registró correctamente. Los tubos han vuelto a tu stock principal respetando los lotes originales.', 'Éxito Absoluto');
-              document.getElementById('modal-cierre-mes').classList.remove('open');
-              
-              if (typeof google !== 'undefined') {
-                  google.script.run.withSuccessHandler(d => { window.KARDEX_DATA = d; if(window.renderTable) window.renderTable(); }).getKardexData();
+                  google.script.run.withSuccessHandler(d => { 
+                      KARDEX_DATA = d; 
+                      if(typeof applyFilters === 'function') applyFilters();
+                      if(typeof updateKPIs === 'function') updateKPIs();
+                  }).getKardexData();
               }
           } catch(err) {
               showCustomAlert('Error guardando el retorno: ' + err, 'Error de Conexión', true);
@@ -9119,5 +9281,678 @@ window.ejecutarCierreMes = function(e) {
   }
 };
 </script>
+
+<!-- ================= MODAL Y LÓGICA DE AUDITORÍA DE CUADRE ================= -->
+<div class="modal-overlay" id="modal-auditoria-cuadre" style="z-index: 9999;">
+  <div class="modal" style="border-top-color: #f59e0b; max-width: 900px; max-height: 90vh; display: flex; flex-direction: column;">
+    <div class="modal-title">
+      <div class="modal-title-left">
+        <div class="modal-title-icon" style="color:#f59e0b; background:rgba(245,158,11,0.12); border-color:#f59e0b; box-shadow:0 0 20px rgba(245,158,11,0.3);">⚖️</div>
+        <div>
+          <h3 style="color: #f59e0b;">Auditoría de Cuadre</h3>
+          <p>Calculadora Interactiva Mensual (Producción vs Físico)</p>
+        </div>
+      </div>
+      <button class="modal-close" type="button" onclick="document.getElementById('modal-auditoria-cuadre').classList.remove('open')">&times;</button>
+    </div>
+    
+    <div style="padding: 20px; display: flex; gap: 15px; align-items: center; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.05);">
+        <div class="form-group" style="margin: 0;">
+            <label style="color: var(--muted2); font-size: 11px;">Desde:</label>
+            <input type="date" id="audit-fecha-desde" class="form-control" style="padding: 5px; font-size: 13px;">
+        </div>
+        <div class="form-group" style="margin: 0;">
+            <label style="color: var(--muted2); font-size: 11px;">Hasta:</label>
+            <input type="date" id="audit-fecha-hasta" class="form-control" style="padding: 5px; font-size: 13px;">
+        </div>
+        <button type="button" class="btn-nuevo" onclick="generarAuditoria()" style="background: #f59e0b; color: white; padding: 6px 15px; margin-top: 15px;">Generar Datos</button>
+        <button type="button" class="btn-nuevo" onclick="imprimirAuditoria()" style="background: rgba(255,255,255,0.1); color: white; padding: 6px 15px; margin-top: 15px; margin-left: auto;">🖨️ Imprimir</button>
+    </div>
+
+    <div style="flex: 1; overflow-y: auto; padding: 20px;" id="area-impresion">
+        <style>
+        @media print {
+            body * { visibility: hidden; }
+            #modal-auditoria-cuadre { position: absolute; left: 0; top: 0; width: 100%; height: auto !important; display: block !important; overflow: visible !important; }
+            #area-impresion { position: absolute; left: 0; top: 0; width: 100%; padding: 0 !important; overflow: visible !important; height: auto !important; }
+            #area-impresion * { visibility: visible; }
+            .modal { max-height: none !important; box-shadow: none; border: none; background: white; overflow: visible !important; height: auto !important; display: block !important; }
+            .modal-overlay { background: white; align-items: flex-start; overflow: visible !important; position: absolute; left: 0; top: 0; height: auto !important; }
+            table { width: 100% !important; border-collapse: collapse !important; color: black !important; page-break-inside: auto; border: 2px solid black !important; }
+            tr { page-break-inside: avoid; page-break-after: auto; background: transparent !important; }
+            table th, table td { border: 1px solid #000 !important; padding: 10px !important; color: black !important; background: transparent !important; }
+            table th { background-color: #e5e7eb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; border-bottom: 2px solid black !important; }
+            table tfoot { display: table-footer-group !important; visibility: visible !important; }
+            table tfoot td { font-weight: bold !important; border: 1px solid black !important; border-top: 2px solid black !important; }
+            input[type="number"] { border: none !important; background: transparent !important; color: black !important; width: 100% !important; margin: 0; padding: 0; text-align: center; font-size: 14pt !important; font-weight: bold !important; }
+            input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        }
+        </style>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: center;">
+            <thead>
+                <tr style="background: rgba(255,255,255,0.05); color: var(--muted); border-bottom: 2px solid rgba(255,255,255,0.1);">
+                    <th style="padding: 10px; text-align: left;">Reactivo / Insumo</th>
+                    <th style="padding: 10px; color: var(--blue);">Saldo Sistema<br><span style="font-size:10px;font-weight:normal;">(Lo que debería haber)</span></th>
+                    <th style="padding: 10px; color: var(--red);">Salidas Sistema<br><span style="font-size:10px;font-weight:normal;">(Lo que se despachó)</span></th>
+                    <th style="padding: 10px; background: rgba(16,185,129,0.1);">SUMA HOJAS TÉCNICOS<br><span style="font-size:10px;font-weight:normal;">(Digita la suma del papel)</span></th>
+                    <th style="padding: 10px;">Diferencia<br>Faltante</th>
+                </tr>
+            </thead>
+            <tbody id="tbody-auditoria">
+                <tr><td colspan="5" style="padding: 30px; color: var(--muted2);">Selecciona el rango de fechas y presiona Generar Datos.</td></tr>
+            </tbody>
+            <tfoot id="tfoot-auditoria" style="display:none; background: rgba(0,0,0,0.2); border-top: 2px solid rgba(255,255,255,0.1);">
+                <tr>
+                    <td colspan="4" style="padding: 12px; text-align: right; font-weight: bold; font-size: 16px;">TOTAL FALTANTE GENERAL:</td>
+                    <td id="total-faltante" style="padding: 12px; font-weight: bold; font-size: 18px; color: var(--red);">-</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+  </div>
+</div>
+
+<script>
+window.imprimirAuditoria = function() {
+    window.print();
+};
+
+window.abrirAuditoriaCuadre = function() {
+    const hoyStr = new Date().toISOString().split('T')[0];
+    const primerDiaMes = new Date();
+    primerDiaMes.setDate(1);
+    const primerDiaStr = primerDiaMes.toISOString().split('T')[0];
+    
+    document.getElementById('audit-fecha-desde').value = primerDiaStr;
+    document.getElementById('audit-fecha-hasta').value = hoyStr;
+    document.getElementById('tbody-auditoria').innerHTML = '<tr><td colspan="5" style="padding: 30px; color: var(--muted2);">Presiona Generar Datos para comenzar la auditoría del mes.</td></tr>';
+    document.getElementById('modal-auditoria-cuadre').classList.add('open');
+};
+
+window.generarAuditoria = function() {
+    if (!KARDEX_DATA || KARDEX_DATA.length === 0) return;
+    const fDesdeStr = document.getElementById('audit-fecha-desde').value;
+    const fHastaStr = document.getElementById('audit-fecha-hasta').value;
+    
+    const dDesdeNum = fDesdeStr ? parseInt(fDesdeStr.replace(/-/g, ''), 10) : 0;
+    const dHastaNum = fHastaStr ? parseInt(fHastaStr.replace(/-/g, ''), 10) : 99999999;
+    
+    let productos = {};
+    
+    const parseFecha = (str) => {
+        if(!str) return 0;
+        const p = String(str).split('/');
+        if(p.length !== 3) return 0;
+        return parseInt(p[2]+p[1]+p[0], 10);
+    };
+
+    // Primero calculamos el saldo total por producto
+    let balancesTotales = {};
+    [...KARDEX_DATA].reverse().forEach(r => {
+        const prod = r.nombre;
+        if(!prod) return;
+        if(!balancesTotales[prod]) balancesTotales[prod] = 0;
+        const t = String(r.tipo).toLowerCase();
+        if (t === 'entrada' || t === 'prestamo' || (t === 'ajuste' && r.entrada > 0)) balancesTotales[prod] += Number(r.entrada || 0);
+        if (t === 'salida' || t === 'descarte' || t === 'devolucion' || (t === 'ajuste' && r.salida > 0)) balancesTotales[prod] -= Number(r.salida || 0);
+    });
+
+    // Ahora filtramos por fecha para ver salidas del periodo
+    KARDEX_DATA.forEach(r => {
+        const prod = r.nombre;
+        if(!prod) return;
+        if(!productos[prod]) productos[prod] = { saldo: balancesTotales[prod], salidasMes: 0 };
+        
+        const fNum = parseFecha(r.fecha);
+        if (fNum >= dDesdeNum && fNum <= dHastaNum) {
+            const t = String(r.tipo).toLowerCase();
+            if (t === 'salida' || t === 'devolucion') {
+                productos[prod].salidasMes += Number(r.salida || 0);
+            }
+        }
+    });
+
+    // Renderizar
+    const tbody = document.getElementById('tbody-auditoria');
+    document.getElementById('tfoot-auditoria').style.display = 'table-footer-group';
+    document.getElementById('total-faltante').innerHTML = '-';
+    let html = '';
+    
+    const sortedProds = Object.keys(productos).sort();
+    
+    if (sortedProds.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px;">No hay productos.</td></tr>';
+        return;
+    }
+
+    sortedProds.forEach((prod, i) => {
+        const prodUpper = String(prod).toUpperCase();
+        
+        // Filtros estrictos: Solo tubos, pero NO los de vidrio bioquimica/inmunologia
+        if (!prodUpper.includes('TUBO')) return;
+        if (prodUpper.includes('TUBO DE VIDRIO BIOQUIMICA') || prodUpper.includes('TUBO DE VIDRIO INMUNOLOGIA')) return;
+
+        const d = productos[prod];
+        
+        html += `
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); background: ${i%2===0?'rgba(255,255,255,0.02)':'transparent'}">
+            <td style="padding: 12px; text-align: left; font-weight: bold; color: var(--light);">${prod}</td>
+            <td style="padding: 12px; font-weight: bold; font-size: 16px; color: var(--blue);">${d.saldo}</td>
+            
+            <td style="padding: 12px; font-weight: bold; font-size: 16px; color: var(--red);">${d.salidasMes}</td>
+            <td style="padding: 12px; background: rgba(16,185,129,0.05);">
+                <input type="number" min="0" placeholder="..." class="form-control" style="width: 80px; text-align: center; font-size: 16px; font-weight: bold; padding: 5px; color: var(--green); border-color: var(--green);" onkeyup="calcDiffAud(this, ${d.salidasMes}, 'produccion')">
+            </td>
+            <td style="padding: 12px; font-weight: bold; font-size: 16px;" class="res-produccion">-</td>
+        </tr>`;
+    });
+    
+    tbody.innerHTML = html || '<tr><td colspan="5" style="padding: 20px;">No hubo movimientos ni saldos para mostrar.</td></tr>';
+};
+
+window.recalcularTotalAuditoria = function() {
+    let totalNeto = 0;
+    const rows = document.querySelectorAll('#tbody-auditoria tr');
+    rows.forEach(tr => {
+        const diffSpan = tr.querySelector('.res-produccion span');
+        if (diffSpan && diffSpan.hasAttribute('data-diff')) {
+            totalNeto += Number(diffSpan.getAttribute('data-diff'));
+        }
+    });
+    const tf = document.getElementById('total-faltante');
+    if (totalNeto === 0) {
+        tf.innerHTML = `<span style="color: var(--green);">OK (0)</span>`;
+    } else if (totalNeto < 0) {
+        tf.innerHTML = `<span style="color: var(--red);">Faltan ${Math.abs(totalNeto)}</span>`;
+    } else {
+        tf.innerHTML = `<span style="color: #f59e0b;">Sobran ${totalNeto}</span>`;
+    }
+};
+
+window.calcDiffAud = function(input, baseNum, tipo) {
+    const val = input.value;
+    const tr = input.closest('tr');
+    // Como simplificamos, tdRes siempre es res-produccion
+    const tdRes = tr.querySelector('.res-produccion');
+    
+    if (val === '') {
+        tdRes.innerHTML = '-';
+        window.recalcularTotalAuditoria();
+        return;
+    }
+    
+    const numVal = Number(val);
+    // Produccion: Diferencia = Lo que me reportaron (val) - Lo que salio del sistema (baseNum)
+    let diff = numVal - baseNum;
+    
+    if (diff === 0) {
+        tdRes.innerHTML = `<span data-diff="0" style="color: var(--green);">OK (0)</span>`;
+    } else if (diff < 0) {
+        tdRes.innerHTML = `<span data-diff="${diff}" style="color: var(--red);">Faltan ${Math.abs(diff)}</span>`;
+    } else {
+        tdRes.innerHTML = `<span data-diff="${diff}" style="color: #f59e0b;">Sobran ${diff}</span>`;
+    }
+    window.recalcularTotalAuditoria();
+};
+</script>
+<!-- ================= FIN DE AUDITORÍA ================= -->
+
+<!-- ================= MÓDULOS DE MINI-ALMACÉN (CIERRE Y AUDITORÍA) ================= -->
+<div class="modal-overlay" id="modal-cierre-mini" style="z-index: 9999;">
+  <div class="modal" style="border-top-color: var(--purple); max-width: 500px;">
+    <div class="modal-title">
+      <div class="modal-title-left">
+        <div class="modal-title-icon" style="color:var(--purple); background:rgba(139,92,246,0.12); border-color:var(--purple); box-shadow:0 0 20px rgba(139,92,246,0.3);">🔄</div>
+        <div>
+          <h3 style="color: var(--purple);">Cierre Mini-Almacén</h3>
+          <p>Retorno de tubos de vidrio</p>
+        </div>
+      </div>
+      <button class="modal-close" type="button" onclick="document.getElementById('modal-cierre-mini').classList.remove('open')">&times;</button>
+    </div>
+    
+    <form id="form-cierre-mini" onsubmit="ejecutarCierreMini(event)">
+      <div class="form-group" style="margin-bottom: 15px;">
+        <label>TUBO DE VIDRIO <span class="req">*</span></label>
+        <select id="cierre-mini-producto" class="form-control" required style="background: rgba(0,0,0,0.2);">
+            <option value="">Seleccione...</option>
+            <option value="TUBO DE VIDRIO BIOQUIMICA">TUBO DE VIDRIO BIOQUIMICA</option>
+            <option value="TUBO DE VIDRIO INMUNOLOGIA">TUBO DE VIDRIO INMUNOLOGIA</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom: 15px;">
+        <label>CANTIDAD QUE REGRESA <span class="req">*</span></label>
+        <input type="number" id="cierre-mini-sobrantes" class="form-control" required min="1" placeholder="Ej. 50">
+      </div>
+      <div class="form-group" style="margin-bottom: 20px;">
+        <label>TU FIRMA (PIN) <span class="req">*</span></label>
+        <input type="password" id="cierre-mini-pin" class="form-control" required maxlength="4" style="letter-spacing: 5px;">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 25px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px;">
+        <button type="button" class="btn-nuevo" style="background:rgba(255,255,255,0.05); color:var(--muted2); box-shadow:none;" onclick="document.getElementById('modal-cierre-mini').classList.remove('open')">Cancelar</button>
+        <button type="submit" class="btn-nuevo" id="btn-ejecutar-cierre-mini" style="background:var(--purple); color:white;">Registrar Retorno</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-auditoria-mini" style="z-index: 9999;">
+  <div class="modal" style="border-top-color: #f59e0b; max-width: 900px; max-height: 90vh; display: flex; flex-direction: column;">
+    <div class="modal-title">
+      <div class="modal-title-left">
+        <div class="modal-title-icon" style="color:#f59e0b; background:rgba(245,158,11,0.12); border-color:#f59e0b; box-shadow:0 0 20px rgba(245,158,11,0.3);">⚖️</div>
+        <div>
+          <h3 style="color: #f59e0b;">Auditoría Mini-Almacén</h3>
+          <p>Cuadre de Tubos de Vidrio</p>
+        </div>
+      </div>
+      <button class="modal-close" type="button" onclick="document.getElementById('modal-auditoria-mini').classList.remove('open')">&times;</button>
+    </div>
+    
+    <div style="padding: 20px; display: flex; gap: 15px; align-items: center; background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.05);">
+        <div class="form-group" style="margin: 0;">
+            <label style="color: var(--muted2); font-size: 11px;">Desde:</label>
+            <input type="date" id="audit-mini-fecha-desde" class="form-control" style="padding: 5px; font-size: 13px;">
+        </div>
+        <div class="form-group" style="margin: 0;">
+            <label style="color: var(--muted2); font-size: 11px;">Hasta:</label>
+            <input type="date" id="audit-mini-fecha-hasta" class="form-control" style="padding: 5px; font-size: 13px;">
+        </div>
+        <button type="button" class="btn-nuevo" onclick="generarAuditoriaMini()" style="background: #f59e0b; color: white; padding: 6px 15px; margin-top: 15px;">Generar Datos</button>
+        <button type="button" class="btn-nuevo" onclick="window.print()" style="background: rgba(255,255,255,0.1); color: white; padding: 6px 15px; margin-top: 15px; margin-left: auto;">🖨️ Imprimir</button>
+    </div>
+
+    <div style="flex: 1; overflow-y: auto; padding: 20px;" id="area-impresion-mini">
+        <style>
+        @media print {
+            body * { visibility: hidden; }
+            #modal-auditoria-mini { position: absolute; left: 0; top: 0; width: 100%; height: auto !important; display: block !important; overflow: visible !important; }
+            #area-impresion-mini { position: absolute; left: 0; top: 0; width: 100%; padding: 0 !important; overflow: visible !important; height: auto !important; }
+            #area-impresion-mini * { visibility: visible; }
+            #modal-auditoria-mini .modal { max-height: none !important; box-shadow: none; border: none; background: white; overflow: visible !important; height: auto !important; display: block !important; }
+            #modal-auditoria-mini .modal-overlay { background: white; align-items: flex-start; overflow: visible !important; position: absolute; left: 0; top: 0; height: auto !important; }
+        }
+        </style>
+        <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: center;">
+            <thead>
+                <tr style="background: rgba(255,255,255,0.05); color: var(--muted); border-bottom: 2px solid rgba(255,255,255,0.1);">
+                    <th style="padding: 10px; text-align: left;">Reactivo / Insumo</th>
+                    <th style="padding: 10px; color: var(--blue);">Saldo Sistema</th>
+                    <th style="padding: 10px; color: var(--red);">Salidas Sistema</th>
+                    <th style="padding: 10px; background: rgba(16,185,129,0.1);">SUMA HOJAS TÉCNICOS</th>
+                    <th style="padding: 10px;">Diferencia</th>
+                </tr>
+            </thead>
+            <tbody id="tbody-auditoria-mini">
+                <tr><td colspan="5" style="padding: 30px; color: var(--muted2);">Selecciona el rango de fechas y presiona Generar Datos.</td></tr>
+            </tbody>
+            <tfoot id="tfoot-auditoria-mini" style="display:none; background: rgba(0,0,0,0.2); border-top: 2px solid rgba(255,255,255,0.1);">
+                <tr>
+                    <td colspan="4" style="padding: 12px; text-align: right; font-weight: bold; font-size: 16px;">TOTAL FALTANTE GENERAL:</td>
+                    <td id="total-faltante-mini" style="padding: 12px; font-weight: bold; font-size: 18px; color: var(--red);">-</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+  </div>
+</div>
+
+<script>
+window.abrirCierreMesMiniAlmacen = function() {
+    document.getElementById('form-cierre-mini').reset();
+    document.getElementById('modal-cierre-mini').classList.add('open');
+};
+
+window.abrirAuditoriaMiniAlmacen = function() {
+    const hoyStr = new Date().toISOString().split('T')[0];
+    const primerDiaMes = new Date();
+    primerDiaMes.setDate(1);
+    const primerDiaStr = primerDiaMes.toISOString().split('T')[0];
+    document.getElementById('audit-mini-fecha-desde').value = primerDiaStr;
+    document.getElementById('audit-mini-fecha-hasta').value = hoyStr;
+    document.getElementById('tbody-auditoria-mini').innerHTML = '<tr><td colspan="5" style="padding: 30px; color: var(--muted2);">Presiona Generar Datos para comenzar la auditoría de vidrio.</td></tr>';
+    document.getElementById('modal-auditoria-mini').classList.add('open');
+};
+
+window.ejecutarCierreMini = async function(e) {
+    try {
+        e.preventDefault();
+        const producto = document.getElementById('cierre-mini-producto').value;
+        const sobrantes = parseInt(document.getElementById('cierre-mini-sobrantes').value) || 0;
+        const pin = document.getElementById('cierre-mini-pin').value.trim();
+        
+        if (!producto || sobrantes <= 0 || pin.length < 4) {
+            showCustomAlert('Todos los campos son obligatorios y válidos.', 'Error', true);
+            return;
+        }
+
+        const btn = document.getElementById('btn-ejecutar-cierre-mini');
+        btn.textContent = 'Procesando...';
+        btn.disabled = true;
+
+        const m = {
+            fecha: new Date().toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric'}),
+            hora: new Date().toLocaleTimeString('en-US', {hour12: false}),
+            tipo: 'Entrada',
+            cantidad: sobrantes,
+            categoria: 'CONTINGENCIA',
+            tipo2: 'CONTINGENCIA',
+            nombre: producto,
+            lote: 'SIN LOTE',
+            marca: 'S/M',
+            vencimiento: '-',
+            registroINVIMA: '-',
+            codigo: 'S/C',
+            observacion: 'RETORNO DE STOCK OPERATIVO',
+            usuario: 'AUTO',
+            pin: pin,
+            area: 'TOMA DE MUESTRA',
+            comprobante: 'RETORNO-MINI'
+        };
+
+        if (typeof google !== 'undefined') {
+            google.script.run.withSuccessHandler(res => {
+                if (res && res.success) {
+                    showCustomAlert('Retorno registrado exitosamente.', 'Éxito');
+                    document.getElementById('modal-cierre-mini').classList.remove('open');
+                    google.script.run.withSuccessHandler(d => { 
+                        KARDEX_DATA = d; 
+                        if(typeof applyFilters === 'function') applyFilters();
+                        if(typeof updateKPIs === 'function') updateKPIs();
+                        if(typeof renderInventario === 'function') renderInventario(false);
+                        if(typeof renderTable === 'function') renderTable();
+                        if(typeof renderContingenciaHistorial === 'function') renderContingenciaHistorial();
+                    }).getKardexData();
+                } else {
+                    showCustomAlert(res.error || 'Error (Posible PIN inválido)', 'Error', true);
+                }
+                btn.textContent = 'Registrar Retorno';
+                btn.disabled = false;
+            }).withFailureHandler(err => {
+                showCustomAlert('Error de conexión', 'Error', true);
+                btn.textContent = 'Registrar Retorno';
+                btn.disabled = false;
+            }).registrarMovimiento(m);
+        } else {
+            alert('Modo desarrollo: Retorno simulado con éxito.');
+            document.getElementById('modal-cierre-mini').classList.remove('open');
+            btn.textContent = 'Registrar Retorno';
+            btn.disabled = false;
+        }
+    } catch(err) {
+        alert(err.message);
+    }
+};
+
+window.generarAuditoriaMini = function() {
+    if (!KARDEX_DATA || KARDEX_DATA.length === 0) return;
+    const fDesdeStr = document.getElementById('audit-mini-fecha-desde').value;
+    const fHastaStr = document.getElementById('audit-mini-fecha-hasta').value;
+    const dDesdeNum = fDesdeStr ? parseInt(fDesdeStr.replace(/-/g, ''), 10) : 0;
+    const dHastaNum = fHastaStr ? parseInt(fHastaStr.replace(/-/g, ''), 10) : 99999999;
+    
+    let productos = {};
+    const parseFecha = (str) => {
+        if(!str) return 0;
+        const p = String(str).split('/');
+        if(p.length !== 3) return 0;
+        return parseInt(p[2]+p[1]+p[0], 10);
+    };
+
+    let balancesTotales = {};
+    [...KARDEX_DATA].reverse().forEach(r => {
+        const prod = r.nombre;
+        if(!prod) return;
+        if(!balancesTotales[prod]) balancesTotales[prod] = 0;
+        const t = String(r.tipo).toLowerCase();
+        if (t === 'entrada' || t === 'prestamo' || (t === 'ajuste' && r.entrada > 0)) balancesTotales[prod] += Number(r.entrada || 0);
+        if (t === 'salida' || t === 'descarte' || t === 'devolucion' || (t === 'ajuste' && r.salida > 0)) balancesTotales[prod] -= Number(r.salida || 0);
+    });
+
+    KARDEX_DATA.forEach(r => {
+        const prod = r.nombre;
+        if(!prod) return;
+        if(!productos[prod]) productos[prod] = { saldo: balancesTotales[prod], salidasMes: 0 };
+        const fNum = parseFecha(r.fecha);
+        if (fNum >= dDesdeNum && fNum <= dHastaNum) {
+            const t = String(r.tipo).toLowerCase();
+            if (t === 'salida' || t === 'devolucion') productos[prod].salidasMes += Number(r.salida || 0);
+        }
+    });
+
+    const tbody = document.getElementById('tbody-auditoria-mini');
+    document.getElementById('tfoot-auditoria-mini').style.display = 'table-footer-group';
+    document.getElementById('total-faltante-mini').innerHTML = '-';
+    let html = '';
+    
+    const sortedProds = Object.keys(productos).sort();
+    sortedProds.forEach((prod, i) => {
+        const prodUpper = String(prod).toUpperCase();
+        // ONLY ALLOW GLASS TUBES
+        if (!prodUpper.includes('TUBO DE VIDRIO BIOQUIMICA') && !prodUpper.includes('TUBO DE VIDRIO INMUNOLOGIA')) return;
+
+        const d = productos[prod];
+        html += `
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); background: ${i%2===0?'rgba(255,255,255,0.02)':'transparent'}">
+            <td style="padding: 12px; text-align: left; font-weight: bold; color: var(--light);">${prod}</td>
+            <td style="padding: 12px; font-weight: bold; font-size: 16px; color: var(--blue);">${d.saldo}</td>
+            <td style="padding: 12px; font-weight: bold; font-size: 16px; color: var(--red);">${d.salidasMes}</td>
+            <td style="padding: 12px; background: rgba(16,185,129,0.05);">
+                <input type="number" min="0" placeholder="..." class="form-control" style="width: 80px; text-align: center; font-size: 16px; font-weight: bold; padding: 5px; color: var(--green); border-color: var(--green);" onkeyup="calcDiffAudMini(this, ${d.salidasMes})">
+            </td>
+            <td style="padding: 12px; font-weight: bold; font-size: 16px;" class="res-produccion-mini">-</td>
+        </tr>`;
+    });
+    
+    tbody.innerHTML = html || '<tr><td colspan="5" style="padding: 20px;">No hay productos de vidrio.</td></tr>';
+};
+
+window.recalcularTotalAuditoriaMini = function() {
+    let totalNeto = 0;
+    const rows = document.querySelectorAll('#tbody-auditoria-mini tr');
+    rows.forEach(tr => {
+        const diffSpan = tr.querySelector('.res-produccion-mini span');
+        if (diffSpan && diffSpan.hasAttribute('data-diff')) {
+            totalNeto += Number(diffSpan.getAttribute('data-diff'));
+        }
+    });
+    const tf = document.getElementById('total-faltante-mini');
+    if (totalNeto === 0) tf.innerHTML = `<span style="color: var(--green);">OK (0)</span>`;
+    else if (totalNeto < 0) tf.innerHTML = `<span style="color: var(--red);">Faltan ${Math.abs(totalNeto)}</span>`;
+    else tf.innerHTML = `<span style="color: #f59e0b;">Sobran ${totalNeto}</span>`;
+};
+
+window.calcDiffAudMini = function(input, baseNum) {
+    const val = input.value;
+    const tr = input.closest('tr');
+    const tdRes = tr.querySelector('.res-produccion-mini');
+    
+    if (val === '') {
+        tdRes.innerHTML = '-';
+        window.recalcularTotalAuditoriaMini();
+        return;
+    }
+    
+    const diff = Number(val) - baseNum;
+    if (diff === 0) tdRes.innerHTML = `<span data-diff="0" style="color: var(--green);">OK (0)</span>`;
+    else if (diff < 0) tdRes.innerHTML = `<span data-diff="${diff}" style="color: var(--red);">Faltan ${Math.abs(diff)}</span>`;
+    else tdRes.innerHTML = `<span data-diff="${diff}" style="color: #f59e0b;">Sobran ${diff}</span>`;
+    window.recalcularTotalAuditoriaMini();
+};
+
+window.makeModalDraggable = function(modalOverlayId) {
+    const overlay = document.getElementById(modalOverlayId);
+    if (!overlay) return;
+    const modal = overlay.querySelector('.modal');
+    const header = modal.querySelector('.modal-title');
+    if (!modal || !header) return;
+
+    overlay.style.pointerEvents = 'none';
+    overlay.style.background = 'transparent';
+    overlay.style.backdropFilter = 'none';
+    overlay.style.webkitBackdropFilter = 'none';
+    
+    // Solo permitir clics en el modal cuando está abierto
+    if (overlay.classList.contains('open')) {
+        modal.style.pointerEvents = 'auto';
+    } else {
+        modal.style.pointerEvents = 'none';
+    }
+    
+    // Interceptar la apertura/cierre para alternar los pointer events
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.attributeName === 'class') {
+                if (overlay.classList.contains('open')) {
+                    modal.style.pointerEvents = 'auto';
+                } else {
+                    modal.style.pointerEvents = 'none';
+                }
+            }
+        });
+    });
+    observer.observe(overlay, { attributes: true });
+
+    modal.style.position = 'absolute';
+    header.style.cursor = 'grab';
+
+    let isDragging = false;
+    let startX, startY, initialLeft, initialTop;
+
+    header.addEventListener('mousedown', function(e) {
+        if(e.target.tagName.toLowerCase() === 'button' || e.target.closest('button')) return;
+        isDragging = true;
+        header.style.cursor = 'grabbing';
+        
+        startX = e.clientX;
+        startY = e.clientY;
+        
+        const rect = modal.getBoundingClientRect();
+        modal.style.left = rect.left + 'px';
+        modal.style.top = rect.top + 'px';
+        modal.style.transform = 'none';
+        modal.style.transition = 'none'; 
+        
+        initialLeft = rect.left;
+        initialTop = rect.top;
+        
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', function(e) {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        modal.style.left = (initialLeft + dx) + 'px';
+        modal.style.top = (initialTop + dy) + 'px';
+    });
+
+    document.addEventListener('mouseup', function() {
+        if (isDragging) {
+            isDragging = false;
+            header.style.cursor = 'grab';
+        }
+    });
+};
+
+setTimeout(() => {
+    window.makeModalDraggable('modal-mov');
+}, 1000);
+</script>
+
+<!-- BYPASS FEFO DE EMERGENCIA -->
+<script>
+(function() {
+    setTimeout(() => {
+        const inputLote = document.getElementById('m-lote');
+        if(inputLote) {
+            const btnBypass = document.createElement('button');
+            btnBypass.type = 'button';
+            btnBypass.innerHTML = '🔓 Bypass FEFO';
+            btnBypass.title = 'Desbloquear Lote (Emergencias)';
+            btnBypass.style.cssText = 'background: rgba(239,68,68,0.1); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); border-radius: 4px; padding: 4px 8px; font-size: 11px; margin-top: 5px; cursor: pointer; display: none; width: 100%; transition: all 0.3s ease;';
+            
+            inputLote.parentNode.insertBefore(btnBypass, inputLote.nextSibling);
+            
+            const originalSetTipo = window.setTipo;
+            if (originalSetTipo) {
+                window.setTipo = function(val, el) {
+                    originalSetTipo(val, el);
+                    if (val === 'Salida') {
+                        btnBypass.style.display = 'block';
+                    } else {
+                        btnBypass.style.display = 'none';
+                        btnBypass.innerHTML = '🔓 Bypass FEFO';
+                        btnBypass.style.background = 'rgba(239,68,68,0.1)';
+                        btnBypass.style.color = '#fca5a5';
+                        btnBypass.style.borderColor = 'rgba(239,68,68,0.3)';
+                    }
+                };
+            }
+
+            btnBypass.addEventListener('click', function() {
+                inputLote.removeAttribute('readonly');
+                inputLote.placeholder = 'FEFO Desbloqueado - Escriba manual';
+                window.loteSeleccionadoFefo = null;
+                
+                const mCantidad = document.getElementById('m-cantidad');
+                if(mCantidad) {
+                    mCantidad.removeAttribute('max');
+                    mCantidad.placeholder = '0.00 (Bypass)';
+                }
+                
+                btnBypass.style.background = 'rgba(16,185,129,0.1)';
+                btnBypass.style.color = 'var(--green)';
+                btnBypass.style.borderColor = 'var(--green)';
+                btnBypass.innerHTML = '✅ Candado FEFO Desbloqueado';
+                
+                // Regenerar el datalist nativo para que aparezcan las opciones
+                const dlLotes = document.getElementById('dl-lotes');
+                if (dlLotes && typeof KARDEX_DATA !== 'undefined') {
+                    const codReal = (document.getElementById('m-codigo').value || '').trim();
+                    const nombreSel = (document.getElementById('m-nombre').value || '').trim().toLowerCase();
+                    const normStr = (s) => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+                    const lotesHist = {};
+                    
+                    KARDEX_DATA.filter(r => {
+                      if (r.observacion && String(r.observacion).includes('[ANULADO]')) return false;
+                      let cR = codReal.toUpperCase();
+                      if (cR && cR !== 'S/C' && cR !== 'SIN CODIGO') {
+                         return String(r.codigo).trim().toUpperCase() === cR;
+                      }
+                      return normStr(r.nombre || '') === normStr(nombreSel);
+                    }).forEach(r => {
+                      const lKey = String(r.lote || '').split('|')[0].trim();
+                      if (lKey && lKey.toLowerCase() !== 'sinlote' && lKey.toLowerCase() !== 's/l') {
+                        if ((r.lote || '').includes('|') || !lotesHist[lKey]) lotesHist[lKey] = r.lote || '';
+                      }
+                    });
+                    
+                    let optionsHtml = '';
+                    for (let lKey in lotesHist) {
+                      let pVence = lotesHist[lKey].split('|').find(p => p.includes('Vence:'));
+                      let label = pVence ? pVence.trim() : 'Sin fecha';
+                      optionsHtml += `<option value="${lKey}" label="${label}">`;
+                    }
+                    dlLotes.innerHTML = optionsHtml;
+                    
+                    // Limpiar input para forzar a que salga el menú desplegable (datalist)
+                    inputLote.value = '';
+                    document.getElementById('m-vencimiento').value = '';
+                    document.getElementById('m-marca').value = '';
+                    
+                    // Auto-foco para que salga la lista
+                    setTimeout(() => inputLote.focus(), 100);
+                }
+                
+                if (typeof showCustomAlert === 'function') {
+                    showCustomAlert('Candado FEFO desbloqueado exitosamente. Haz clic en el campo LOTE para ver la lista desplegable y seleccionar tu lote.', 'Bypass Activado', false);
+                }
+            });
+        }
+    }, 1500);
+})();
+</script>
+
 </body>
 </html>
